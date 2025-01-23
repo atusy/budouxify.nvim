@@ -1,6 +1,8 @@
 local M = {}
 
-function M.W()
+---W/E motion function
+---@param head boolean
+local function forward(head)
 	local cursor = vim.api.nvim_win_get_cursor(0)
 	local line = vim.api.nvim_buf_get_lines(0, cursor[1] - 1, cursor[1], false)[1]
 	local right = line:sub(cursor[2] + 1)
@@ -74,6 +76,10 @@ function M.W()
 	if vim.api.nvim_win_get_cursor(0)[2] == cursor[2] then
 		vim.cmd("normal! W")
 	end
+end
+
+function M.W()
+	forward(true)
 end
 
 return M
