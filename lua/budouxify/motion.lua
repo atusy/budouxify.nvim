@@ -7,6 +7,8 @@ local function forward(head)
 	local line = vim.api.nvim_buf_get_lines(0, cursor[1] - 1, cursor[1], false)[1]
 	local right = line:sub(cursor[2] + 1)
 
+	local fallback = head and "W" or "E"
+
 	--[[ if cursor is on %s, %w, or %p ]]
 	local i = 0
 	for char in right:gmatch(".") do
@@ -16,7 +18,7 @@ local function forward(head)
 			-- jump with W if
 			-- * cursor is on a space
 			-- * cursor is on a sequence of alphanumerics or punctuations followed by a space
-			vim.cmd("normal! W")
+			vim.cmd("normal! " .. fallback)
 			return
 		end
 
@@ -46,7 +48,16 @@ local function forward(head)
 	local segments = model.parse(line)
 	local n = 0
 	for _, seg in ipairs(segments) do
-		n = n + #seg
+		local segchars = vim.fn.split(seg, [[\zs]])
+		if head then
+			n = n + #seg
+		else
+			n = n + #seg - #segchars[#segchars] + 1
+			-- 「あいうえお」があったら最後の一文字を除く「あいうえ」のバイト長+1をnに加える
+			--           ^ここの位置が欲しい
+			-- あなたとジャヴァ今すぐダウンロード
+			-- W      EW            EW          E
+		end
 		if n > cursor[2] then
 			break
 		end
@@ -64,7 +75,7 @@ local function forward(head)
 
 	-- jump to the next WORD
 	if delta == s then
-		vim.cmd("normal! W")
+		vim.cmd("normal! " .. fallback)
 		return
 	end
 
@@ -74,12 +85,28 @@ local function forward(head)
 	-- jump to next line if cursor is on the last character
 	vim.cmd("normal! hl") -- correct cursor position if it is on the middle of a multibyte character
 	if vim.api.nvim_win_get_cursor(0)[2] == cursor[2] then
-		vim.cmd("normal! W")
+		vim.cmd("normal! " .. fallback)
 	end
 end
+
+-- あいうえお
 
 function M.W()
 	forward(true)
 end
+
+function M.E()
+	forward(false)
+end
+
+pcall(vim.keymap.del, { "n", "x", "o" }, "W")
+vim.keymap.set({ "n", "x", "o" }, "W", function()
+	M.W()
+end)
+vim.keymap.set({ "n", "x", "o" }, "E", function()
+	M.E()
+end)
+-- あなたとジャヴァ今すぐダウンロード
+-- W      EW            EW          E
 
 return M
