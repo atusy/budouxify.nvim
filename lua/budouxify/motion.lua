@@ -47,18 +47,18 @@ local function forward(head)
 	-- TODO:to improve performance, do segmentation within a sentence or between singlebyte characters (%w, %s, %p).
 	local segments = model.parse(line)
 	local n = 0
+	local back_char = 0
 	for _, seg in ipairs(segments) do
 		local segchars = vim.fn.split(seg, [[\zs]])
-		if head then
-			n = n + #seg
-		else
-			n = n + #seg - #segchars[#segchars] + 1
-			-- 「あいうえお」があったら最後の一文字を除く「あいうえ」のバイト長+1をnに加える
-			--           ^ここの位置が欲しい
-			-- あなたとジャヴァ今すぐダウンロード
-			-- W      EW            EW          E
-		end
-		if n > cursor[2] then
+		n = n + #seg
+		-- TODO: やっぱり次のセグメントの先頭文字分戻らないといけない気がする
+		-- じゃないと、セグメント末尾が半角の時に戻る分がたりない
+		back_char = head and 0 or #segchars[#segchars]
+		-- 「あいうえお」があったら最後の一文字を除く「あいうえ」のバイト長+1をnに加える
+		--           ^ここの位置が欲しい
+		-- あなたとジャヴァ今すぐダウンロード
+		-- W      EW            EW          E
+		if n - back_char > cursor[2] then
 			break
 		end
 	end
@@ -69,7 +69,7 @@ local function forward(head)
 	-- jump to the next segment
 	local nmax = cursor[2] + delta - 1
 	if n < nmax then
-		vim.api.nvim_win_set_cursor(0, { cursor[1], n })
+		vim.api.nvim_win_set_cursor(0, { cursor[1], n - back_char })
 		return
 	end
 
