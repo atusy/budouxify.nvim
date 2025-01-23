@@ -35,7 +35,7 @@ local function forward(head)
 
 	-- [[jump with budoux]]
 	-- if there is no break within the sequence of multibyte characters,
-	-- jump to the end of the seqience.
+	-- jump to the end of the sequence.
 	--
 	-- Example where `|` is the cursor and `^` is the jump target:
 	-- あああa
