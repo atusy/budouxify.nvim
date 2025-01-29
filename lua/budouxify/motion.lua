@@ -48,18 +48,25 @@ local function forward(head)
 	local segments = model.parse(line)
 	local n = 0
 	for _, seg in ipairs(segments) do
-		local segchars = vim.fn.split(seg, [[\zs]])
+		n = n + #seg
+
+		-- あいうえお_かきくけこ_さしすせそ_たちつてと
+		--                |    E W
+		-- `_`をセグメント協会、`|`をカーソル位置とする。
+		-- nは行頭からカーソル（`|`）を位置を超える最初のセグメントの右端の文字までのバイト数（「あいうえおかきくけこ」）
+		-- nvim_win_set_cursorの列は0-indexedなので、バイト数の合計は実質的に次のセグメントの1文字目の位置で`W`相当になる
+		-- また、最後のセグメントの最後の文字「こ」のバイト数をひくと、「あいうえおかきくけ」のバイト数になり、実質的に「こ」の位置を示すので`E`相当になる
 		if head then
-			n = n + #seg
+			if n > cursor[2] then
+				break
+			end
 		else
-			n = n + #seg - #segchars[#segchars] + 1
-			-- 「あいうえお」があったら最後の一文字を除く「あいうえ」のバイト長+1をnに加える
-			--           ^ここの位置が欲しい
-			-- あなたとジャヴァ今すぐダウンロード
-			-- W      EW            EW          E
-		end
-		if n > cursor[2] then
-			break
+			local segchars = vim.fn.split(seg, [[\zs]])
+			local lastchar = segchars[#segchars]
+			if n - #lastchar > cursor[2] then
+				n = n - #lastchar
+				break
+			end
 		end
 	end
 
