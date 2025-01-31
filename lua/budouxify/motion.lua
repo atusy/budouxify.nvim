@@ -3,6 +3,7 @@ local M = {}
 ---@param segments string[]
 ---@param column number
 ---@param head boolean
+---@return number
 function M._find_jump_pos(segments, column, head)
 	-- Segumentation requires characters on the left of the cursor.
 	-- TODO:to improve performance, do segmentation within a sentence or between singlebyte characters (%w, %s, %p).
@@ -29,6 +30,7 @@ function M._find_jump_pos(segments, column, head)
 			end
 		end
 	end
+	return n
 end
 
 ---W/E motion function
