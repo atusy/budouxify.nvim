@@ -1,5 +1,36 @@
 local M = {}
 
+---@param segments string[]
+---@param column number
+---@param head boolean
+function M._find_jump_pos(segments, column, head)
+	-- Segumentation requires characters on the left of the cursor.
+	-- TODO:to improve performance, do segmentation within a sentence or between singlebyte characters (%w, %s, %p).
+	local n = 0
+	for _, seg in ipairs(segments) do
+		n = n + #seg
+
+		-- あいうえお_かきくけこ_さしすせそ_たちつてと
+		--                |    E W
+		-- `_`をセグメント協会、`|`をカーソル位置とする。
+		-- nは行頭からカーソル（`|`）を位置を超える最初のセグメントの右端の文字までのバイト数（「あいうえおかきくけこ」）
+		-- nvim_win_set_cursorの列は0-indexedなので、バイト数の合計は実質的に次のセグメントの1文字目の位置で`W`相当になる
+		-- また、最後のセグメントの最後の文字「こ」のバイト数をひくと、「あいうえおかきくけ」のバイト数になり、実質的に「こ」の位置を示すので`E`相当になる
+		if head then
+			if n > column then
+				break
+			end
+		else
+			local segchars = vim.fn.split(seg, [[\zs]])
+			local lastchar = segchars[#segchars]
+			if n - #lastchar > column then
+				n = n - #lastchar
+				break
+			end
+		end
+	end
+end
+
 ---W/E motion function
 ---@param head boolean
 local function forward(head)
@@ -46,29 +77,7 @@ local function forward(head)
 	-- Segumentation requires characters on the left of the cursor.
 	-- TODO:to improve performance, do segmentation within a sentence or between singlebyte characters (%w, %s, %p).
 	local segments = model.parse(line)
-	local n = 0
-	for _, seg in ipairs(segments) do
-		n = n + #seg
-
-		-- あいうえお_かきくけこ_さしすせそ_たちつてと
-		--                |    E W
-		-- `_`をセグメント協会、`|`をカーソル位置とする。
-		-- nは行頭からカーソル（`|`）を位置を超える最初のセグメントの右端の文字までのバイト数（「あいうえおかきくけこ」）
-		-- nvim_win_set_cursorの列は0-indexedなので、バイト数の合計は実質的に次のセグメントの1文字目の位置で`W`相当になる
-		-- また、最後のセグメントの最後の文字「こ」のバイト数をひくと、「あいうえおかきくけ」のバイト数になり、実質的に「こ」の位置を示すので`E`相当になる
-		if head then
-			if n > cursor[2] then
-				break
-			end
-		else
-			local segchars = vim.fn.split(seg, [[\zs]])
-			local lastchar = segchars[#segchars]
-			if n - #lastchar > cursor[2] then
-				n = n - #lastchar
-				break
-			end
-		end
-	end
+	local n = M._find_jump_pos(segments, cursor[2], head)
 
 	local w, s, p, r = right:find("%w"), right:find("%s"), right:find("%p"), #right
 	local delta = math.min(w or r, s or r, p or r)
