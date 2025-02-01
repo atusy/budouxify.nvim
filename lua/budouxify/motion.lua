@@ -4,7 +4,7 @@ local M = {}
 ---@param column number
 ---@param head boolean
 ---@return number
-function M._find_jump_pos(segments, column, head)
+function M._find_jump_pos_from_segments(segments, column, head)
 	local n = 0
 	for _, seg in ipairs(segments) do
 		n = n + #seg
@@ -36,7 +36,7 @@ end
 ---@param col number
 ---@param segmenter function
 ---@return string | number
-function M._forward(head, line, col, segmenter)
+function M._find_jump_pos(head, line, col, segmenter)
 	local right = line:sub(col + 1)
 
 	local fallback = head and "W" or "E"
@@ -76,7 +76,7 @@ function M._forward(head, line, col, segmenter)
 	-- Segmentation requires characters on the left of the cursor.
 	-- TODO:to improve performance, do segmentation within a sentence or between singlebyte characters (%w, %s, %p).
 	local segments = segmenter(line)
-	local n = M._find_jump_pos(segments, col, head)
+	local n = M._find_jump_pos_from_segments(segments, col, head)
 
 	local w, s, p, r = right:find("%w"), right:find("%s"), right:find("%p"), #right
 	local delta = math.min(w or r, s or r, p or r)
@@ -115,7 +115,8 @@ function M.forward(opt)
 	local buf = vim.api.nvim_win_get_buf(opt.win)
 	local cursor = vim.api.nvim_win_get_cursor(opt.win)
 	local line = vim.api.nvim_buf_get_lines(buf, cursor[1] - 1, cursor[1], false)[1]
-	local target = M._forward(opt.head, line, cursor[2], opt.segmenter or require("budoux").load_japanese_model().parse)
+	local target =
+		M._find_jump_pos(opt.head, line, cursor[2], opt.segmenter or require("budoux").load_japanese_model().parse)
 	if type(target) == "string" then
 		vim.cmd("normal! " .. target)
 	else
