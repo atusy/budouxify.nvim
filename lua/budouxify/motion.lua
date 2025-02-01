@@ -5,8 +5,6 @@ local M = {}
 ---@param head boolean
 ---@return number
 function M._find_jump_pos(segments, column, head)
-	-- Segumentation requires characters on the left of the cursor.
-	-- TODO:to improve performance, do segmentation within a sentence or between singlebyte characters (%w, %s, %p).
 	local n = 0
 	for _, seg in ipairs(segments) do
 		n = n + #seg
@@ -76,7 +74,7 @@ local function forward(head)
 	-- あああa
 	-- |     ^
 	local model = require("budoux").load_japanese_model()
-	-- Segumentation requires characters on the left of the cursor.
+	-- Segmentation requires characters on the left of the cursor.
 	-- TODO:to improve performance, do segmentation within a sentence or between singlebyte characters (%w, %s, %p).
 	local segments = model.parse(line)
 	local n = M._find_jump_pos(segments, cursor[2], head)
