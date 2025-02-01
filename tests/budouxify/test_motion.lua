@@ -4,8 +4,9 @@ local T = MiniTest.new_set()
 
 local M = require("budouxify.motion")
 
-T["budouxify.motion._find_jump_pos"] = function()
-	local delta = #"あ"
+do
+	local base_name = "budouxify.motion._find_jump_pos: "
+	local charlen = #"あ"
 	local segments = {
 		"あああ",
 		"いいい",
@@ -16,24 +17,27 @@ T["budouxify.motion._find_jump_pos"] = function()
 		table.insert(heads, heads[i] + #segment)
 	end
 
-	-- Wは現在のセグメントの次のセグメントの先頭に移動する
-	for idx = 1, #segments - 1 do
-		for col = heads[idx], heads[idx + 1] - 1 do
-			MiniTest.expect.equality(M._find_jump_pos(segments, col, true), heads[idx + 1])
+	T[base_name .. "Wは現在のセグメントの次のセグメントの先頭に移動する"] = function()
+		for idx = 1, #segments - 1 do
+			for col = heads[idx], heads[idx + 1] - 1 do
+				MiniTest.expect.equality(M._find_jump_pos(segments, col, true), heads[idx + 1])
+			end
 		end
 	end
 
-	-- カーソル位置がセグメントの末尾より手前の時、Eは現在のセグメントの末尾に移動する
-	for idx = 1, #segments - 1 do
-		for col = heads[idx], heads[idx + 1] - delta - 1 do
-			MiniTest.expect.equality(M._find_jump_pos(segments, col, false), heads[idx + 1] - delta)
+	T[base_name .. "カーソル位置がセグメントの末尾より手前の時、Eは現在のセグメントの末尾に移動する"] = function()
+		for idx = 1, #segments - 1 do
+			for col = heads[idx], heads[idx + 1] - charlen - 1 do
+				MiniTest.expect.equality(M._find_jump_pos(segments, col, false), heads[idx + 1] - charlen)
+			end
 		end
 	end
 
-	-- カーソル位置がセグメントの末尾の時、Eは次のセグメントの末尾に移動する
-	for idx = 1, #segments - 1 do
-		for col = heads[idx + 1] - delta, heads[idx + 1] - 1 do
-			MiniTest.expect.equality(M._find_jump_pos(segments, col, false), heads[idx + 2] - delta)
+	T[base_name .. "カーソル位置がセグメントの末尾の時、Eは次のセグメントの末尾に移動する"] = function()
+		for idx = 1, #segments - 1 do
+			for col = heads[idx + 1] - charlen, heads[idx + 1] - 1 do
+				MiniTest.expect.equality(M._find_jump_pos(segments, col, false), heads[idx + 2] - charlen)
+			end
 		end
 	end
 end
