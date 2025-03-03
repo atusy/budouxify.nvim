@@ -58,4 +58,22 @@ T["Cursor on the space"]["E motion when next WORD starts with %p or %w"]["_"] = 
 	MiniTest.expect.equality(pos, { row = 1, col = prefix:len() + WORD:len() - 1 })
 end
 
+T["Cursor on the %w or %p"] = MiniTest.new_set({
+	parametrize = {
+		{ "abc ", "xxx" },
+		{ "abc   ", "123" },
+		{ "abc　　", "%%%" },
+		{ "abc　  ", "あいう" },
+	},
+})
+T["Cursor on the %w or %p"]["W motion"] = function(prefix, suffix)
+	local pos = M.find_forward({
+		row = 1,
+		col = 0,
+		curline = prefix .. suffix,
+		head = true,
+	})
+	MiniTest.expect.equality(pos, { row = 1, col = #prefix })
+end
+
 return T

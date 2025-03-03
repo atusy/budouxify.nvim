@@ -70,10 +70,16 @@ M.find_forward = function(opts)
 		end
 	end
 
-	-- カーソル位置が単語文字
-	if string.find(rightchars, "^[%w%p]+[%s　]*$") then
-		--TODO: implement test
-		return _find_forward_in_next_line(row, opts.head)
+	-- カーソル位置が単語文字の連続
+	if vim.regex("^[[:alnum:][:punct:]]\\+[[:space:]　]"):match_str(rightchars) then
+		-- 直後にスペース
+		-- カーソルが空白文字にあるとみなして再帰
+		return M.find_forward({
+			row = row,
+			col = col + #string.match(rightchars, "^[%w%p]+"),
+			curline = curline,
+			head = opts.head,
+		})
 	end
 
 	error("Unimplemented")
