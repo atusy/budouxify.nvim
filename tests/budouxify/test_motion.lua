@@ -22,4 +22,21 @@ T["W: cursor on the zenkaku-space"] = function()
 		MiniTest.expect.equality(pos, nil)
 	end
 end
+
+T["E: cursor on the space and next word starts with %w"] = function()
+	local pos = M.find_forward({ row = 1, col = 0, curline = "   abc def", head = false })
+	if not pos then
+		error("pos is nil")
+	end
+	MiniTest.expect.equality(pos, { row = 1, col = 5 })
+end
+
+T["E: cursor on the space and next word starts with %p"] = function()
+	local pos = M.find_forward({ row = 1, col = 0, curline = "   %bc def", head = false })
+	if not pos then
+		error("pos is nil")
+	end
+	MiniTest.expect.equality(pos, { row = 1, col = 5 })
+end
+
 return T

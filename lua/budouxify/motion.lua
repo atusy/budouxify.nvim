@@ -35,8 +35,15 @@ M.find_forward = function(opts)
 	-- カーソル位置が空白文字
 	local _, prefix_spaces = string.find(rightchars, "^[%s　]+")
 	if prefix_spaces then
+		-- W
 		if opts.head then
 			return { row = row, col = col + prefix_spaces }
+		end
+
+		-- E
+		local _, prefix = string.find(rightchars, "^[%s　]+[%w%p]+")
+		if prefix then
+			return { row = row, col = col + prefix - 1 }
 		end
 	end
 
