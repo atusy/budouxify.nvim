@@ -4,10 +4,13 @@ local T = MiniTest.new_set()
 
 local M = require("budouxify.motion")
 
-T["W: cursor on the space"] = MiniTest.new_set({ parametrize = {
-	{ "  　" },
-	{ "　  " },
-} })
+T["W: cursor on the space"] =
+	MiniTest.new_set({ parametrize = {
+		{ "   " },
+		{ "　　" },
+		{ "  　" },
+		{ "　  " },
+	} })
 T["W: cursor on the space"]["works"] = function(spaces)
 	local pos = M.find_forward({
 		row = 1,
