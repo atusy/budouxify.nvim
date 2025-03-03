@@ -86,6 +86,14 @@ M.find_forward = function(opts)
 		return { row = row, col = col + length }
 	end
 
+	do
+		local _, width = vim.regex("^."):match_str(rightchars)
+		if width <= 1 then
+			vim.notify("Unhandled 1-byte character: '" .. string.sub(rightchars, 1, width) .. "'")
+			return nil
+		end
+	end
+
 	error("Unimplemented")
 end
 
