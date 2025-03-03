@@ -10,17 +10,25 @@ end
 
 T["Cursor on the space"] =
 	MiniTest.new_set({ parametrize = {
-		{ "   " },
+		{ "    " },
 		{ "　　" },
 		{ "  　" },
 		{ "　  " },
 	} })
 
-T["Cursor on the space"]["W motion"] = function(spaces)
+T["Cursor on the space"]["W motion"] = MiniTest.new_set({
+	parametrize = {
+		{ "aaa" },
+		{ "123" },
+		{ "%%%" },
+		{ "あいう" },
+	},
+})
+T["Cursor on the space"]["W motion"]["_"] = function(spaces, WORD)
 	local pos = M.find_forward({
 		row = 1,
 		col = 0,
-		curline = spaces .. "abc",
+		curline = spaces .. WORD,
 		head = true,
 	})
 	MiniTest.expect.equality(pos, { row = 1, col = spaces:len() })

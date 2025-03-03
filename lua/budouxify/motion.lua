@@ -45,9 +45,11 @@ M.find_forward = function(opts)
 	end
 
 	-- カーソル位置が空白文字
-	local _, prefix_spaces = string.find(rightchars, "^[%s　]+")
+	-- NOTE: string.find("  " .. x, "^[%s　]+") は
+	-- xがalphanumericか全角文字かで結果が変わるので、vim.regexを使う
+	local _, prefix_spaces = vim.regex("^[[:space:]　]\\+"):match_str(rightchars)
 	if prefix_spaces then
-		if string.match(rightchars, "^[%s　]+$") then
+		if string.find(rightchars, "^[%s　]+$") then
 			--TODO: implement test
 			return _find_forward_in_next_line(row, opts.head)
 		end
