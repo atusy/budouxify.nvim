@@ -58,6 +58,25 @@ T["Cursor on the space"]["E motion when next WORD starts with %p or %w"]["_"] = 
 	MiniTest.expect.equality(pos, { row = 1, col = prefix:len() + WORD:len() - 1 })
 end
 
+T["Cursor on the space"]["E motion when next WORD starts with Japanese"] = MiniTest.new_set({
+	parametrize = {
+		{ "今日は", "" },
+		{ "今日は", "GOOD" },
+		{ "今日は", "天気です。" },
+		--     E
+	},
+})
+
+T["Cursor on the space"]["E motion when next WORD starts with Japanese"]["_"] = function(prefix, WORD, suffix)
+	local pos = M.find_forward({
+		row = 1,
+		col = 0,
+		curline = prefix .. WORD .. suffix,
+		head = false,
+	})
+	MiniTest.expect.equality(pos, { row = 1, col = prefix:len() + #"今日" - 1 })
+end
+
 T["Cursor on the %w or %p"] = MiniTest.new_set({
 	parametrize = {
 		{ "abc ", "xxx" },

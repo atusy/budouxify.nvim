@@ -68,8 +68,20 @@ M.find_forward = function(opts)
 			return { row = row, col = col + prefix - 1 }
 		else
 			--   あいうえお
-			--   ^cursor
-			error("Unimplemented")
+			--   ^cursor E
+			local pos_next_WORD = M.find_forward({
+				row = row,
+				col = col + prefix_spaces,
+				curline = curline,
+				head = true,
+			})
+			if not pos_next_WORD or pos_next_WORD.row > row then
+				local x, _ = vim.regex(".$"):match_str(rightchars)
+				return { row = row, col = col + x - 1 }
+			end
+
+			local x, _ = vim.regex(".$"):match_str(string.sub(curline, 1, pos_next_WORD.col))
+			return { row = row, col = x - 1 }
 		end
 	end
 
