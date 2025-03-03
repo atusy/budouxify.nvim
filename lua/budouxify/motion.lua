@@ -21,7 +21,7 @@ M.find_forward = function(opts)
 	local rightchars = string.sub(curline, col + 1) -- including the current char
 
 	-- 行末処理
-	if not vim.regex(".."):match_str(rightchars) then
+	if not vim.regex(".."):match_str(rightchars) or string.match(rightchars, "^[%s　]+$") then
 		-- 最終行の行末なら移動しない
 		local lastrow = vim.api.nvim_buf_line_count(0)
 		if row == lastrow then
@@ -29,7 +29,11 @@ M.find_forward = function(opts)
 		end
 
 		-- 次の行があるなら試す
-		M.find_forward({ row = row + 1, col = 0, head = opts.head })
+		M.find_forward({
+			row = row + 1,
+			col = 0,
+			head = opts.head,
+		})
 	end
 
 	-- カーソル位置が空白文字
