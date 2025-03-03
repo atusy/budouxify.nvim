@@ -64,6 +64,10 @@ T["Cursor on the %w or %p"] = MiniTest.new_set({
 		{ "abc   ", "123" },
 		{ "abc　　", "%%%" },
 		{ "abc　  ", "あいう" },
+		{ "abc", "あいう" },
+		{ "%%%", "あいう" },
+		{ "123", "あいう" },
+		{ "a%3", "あいう" },
 	},
 })
 T["Cursor on the %w or %p"]["W motion"] = function(prefix, suffix)
