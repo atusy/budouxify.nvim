@@ -110,7 +110,7 @@ M.find_forward = function(opts)
 	if #segments <= 1 then
 		if pos_next_ascii then
 			if opts.head then
-				return { row = row, col = col + pos_next_ascii - 1 }
+				return { row = row, col = col + pos_next_ascii }
 			else
 				local n = vim.regex(".[[:alnum:][:punct:][:space:]]"):match_str(rightchars)
 				return { row = row, col = col + n - 1 }
@@ -125,7 +125,7 @@ M.find_forward = function(opts)
 		n = n + #segment
 		if n > col then
 			if opts.head then
-				return { row = row, col = n - 1 }
+				return { row = row, col = n }
 			else
 				error("Unimplemented")
 			end

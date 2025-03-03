@@ -113,7 +113,7 @@ T["Cursor on Japanese segment"]["W motion"] = function(segments, nth_segment)
 			curline = line,
 			head = true,
 		})
-		MiniTest.expect.equality(pos, { row = 1, col = col_base + #segments[nth_segment] - 1 })
+		MiniTest.expect.equality(pos, { row = 1, col = col_base + #segments[nth_segment] })
 	end
 end
 
