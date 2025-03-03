@@ -22,14 +22,28 @@ T["Cursor on the space"]["W motion"] = function(spaces)
 	MiniTest.expect.equality(pos, { row = 1, col = spaces:len() })
 end
 
-T["E: cursor on the space and next word starts with %w"] = function()
-	local pos = M.find_forward({ row = 1, col = 0, curline = "   abc def", head = false })
-	MiniTest.expect.equality(pos, { row = 1, col = 5 })
-end
+T["Cursor on the space"]["E motion when next WORD starts with %p or %w"] = MiniTest.new_set({
+	parametrize = {
+		{ "abc", " def" },
+		{ "!@$", " def" },
+		{ "123", " def" },
+		{ "a@3", " def" },
+		{ "abc", "あいう" },
+		{ "!@$", "あいう" },
+		{ "123", "あいう" },
+		{ "a@3", "あいう" },
+		--   ^cursor
+	},
+})
 
-T["E: cursor on the space and next word starts with %p"] = function()
-	local pos = M.find_forward({ row = 1, col = 0, curline = "   %bc def", head = false })
-	MiniTest.expect.equality(pos, { row = 1, col = 5 })
+T["Cursor on the space"]["E motion when next WORD starts with %p or %w"]["_"] = function(prefix, WORD, suffix)
+	local pos = M.find_forward({
+		row = 1,
+		col = 0,
+		curline = prefix .. WORD .. suffix,
+		head = false,
+	})
+	MiniTest.expect.equality(pos, { row = 1, col = prefix:len() + WORD:len() - 1 })
 end
 
 return T
