@@ -21,6 +21,9 @@ end
 ---@param opts { row: number?, col: number?, curline: string?, head: boolean }
 ---@return { row: number, col: number } | nil
 M.find_forward = function(opts)
+	---@type fun(string): string[]
+	local parse = require("budoux").load_japanese_model().parse
+
 	local row, col = 0, 0 ---@type number, number
 	if opts.row and opts.col then
 		row, col = opts.row, opts.col
@@ -39,7 +42,7 @@ M.find_forward = function(opts)
 	local rightchars = string.sub(curline, col + 1) -- including the current char
 
 	-- 行末処理
-	if not vim.regex(".."):match_str(rightchars) then
+	if rightchars == "" or not vim.regex(".."):match_str(rightchars) then
 		--TODO: implement test
 		return _find_forward_in_next_line(row, opts.head)
 	end
@@ -98,21 +101,34 @@ M.find_forward = function(opts)
 		end
 	end
 
-	local _, pos_next_1_byte_char = rightchars:find("[%w%p%s]")
-	local rightchars_utf8 = pos_next_1_byte_char and string.sub(rightchars, 1, pos_next_1_byte_char - 1) or rightchars
+	local pos_next_ascii, _ = vim.regex("[[:alnum:][:punct:][:space:]]"):match_str(rightchars)
+	local rightchars_utf8 = pos_next_ascii and string.sub(rightchars, 1, pos_next_ascii) or rightchars
 	local leftchars = string.sub(curline, 1, col)
 	local pos, _ = vim.regex("[^[:alnum:][:punct:][:space:]]\\+$"):match_str(leftchars)
 	local leftchars_utf8 = pos and string.sub(leftchars, pos) or ""
 	local segments = parse(leftchars_utf8 .. rightchars_utf8)
 	if #segments <= 1 then
-		if pos_next_1_byte_char then
+		if pos_next_ascii then
 			if opts.head then
-				return { row = row, col = col + pos_next_1_byte_char - 1 }
+				return { row = row, col = col + pos_next_ascii - 1 }
 			else
-				error("Unimplemented")
+				local n = vim.regex(".[[:alnum:][:punct:][:space:]]"):match_str(rightchars)
+				return { row = row, col = col + n - 1 }
 			end
 		else
 			return _find_forward_in_next_line(row, opts.head)
+		end
+	end
+
+	local n = #leftchars - #leftchars_utf8
+	for _, segment in pairs(segments) do
+		n = n + #segment
+		if n > col then
+			if opts.head then
+				return { row = row, col = n - 1 }
+			else
+				error("Unimplemented")
+			end
 		end
 	end
 

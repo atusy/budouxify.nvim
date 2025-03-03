@@ -81,15 +81,28 @@ T["Cursor on the %w or %p"]["W motion"] = function(prefix, suffix)
 end
 
 T["Cursor on Japanese segment"] = MiniTest.new_set({
+	-- { { "今日は", "天気です。", "GOOD" }, 2 }
+	-- の場合、2番目のセグメントにカーソルを置いたときの挙動をテスト
+	-- 「天」、「気」、「で」、「す」、「。」のそれぞれの位置を試す
 	parametrize = {
-		{ { "今日は", "GOOD" } },
+		{ { "今日は", "GOOD" }, 1 },
+		{ { "今日は", "天気です。", "GOOD" }, 2 },
+		{ { " ", "今日は", "天気です。", "GOOD" }, 3 },
+		{ { "abc ", "今日は", "天気です。", "GOOD" }, 3 },
 	},
 })
 
-T["Cursor on Japanese segment"]["W motion"] = function(segments)
+T["Cursor on Japanese segment"]["W motion"] = function(segments, nth_segment)
 	local line = table.concat(segments)
-	local segmentchars = vim.fn.split(segments[1], "\\zs")
-	local col = 0
+	local col_base = 0
+	if nth_segment > 1 then
+		for i = 2, nth_segment do
+			col_base = col_base + #segments[i - 1]
+		end
+	end
+
+	local col = col_base
+	local segmentchars = vim.fn.split(segments[nth_segment], "\\zs")
 	for i, _ in pairs(segmentchars) do
 		if i > 1 then
 			col = col + #segmentchars[i - 1]
@@ -100,7 +113,7 @@ T["Cursor on Japanese segment"]["W motion"] = function(segments)
 			curline = line,
 			head = true,
 		})
-		MiniTest.expect.equality(pos, { row = 1, col = #segments[1] })
+		MiniTest.expect.equality(pos, { row = 1, col = col_base + #segments[nth_segment] - 1 })
 	end
 end
 
