@@ -82,8 +82,12 @@ M.find_forward = function(opts)
 		})
 	elseif vim.regex("^[[:alnum:][:punct:]]\\+."):match_str(rightchars) then
 		-- 直後に日本語
-		local _, length = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rightchars)
-		return { row = row, col = col + length }
+		if opts.head then
+			local _, length = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rightchars)
+			return { row = row, col = col + length }
+		else
+			error("Unimplemented")
+		end
 	end
 
 	do
