@@ -11,7 +11,7 @@ local function _find_forward_in_next_line(row, head)
 	end
 
 	-- 次の行があるなら試す
-	M.find_forward({
+	return M.find_forward({
 		row = row + 1,
 		col = 0,
 		head = head,
@@ -104,8 +104,9 @@ M.find_forward = function(opts)
 	local pos_next_ascii, _ = vim.regex("[[:alnum:][:punct:][:space:]]"):match_str(rightchars)
 	local rightchars_utf8 = pos_next_ascii and string.sub(rightchars, 1, pos_next_ascii) or rightchars
 	local leftchars = string.sub(curline, 1, col)
-	local pos, _ = vim.regex("[^[:alnum:][:punct:][:space:]]\\+$"):match_str(leftchars)
-	local leftchars_utf8 = pos and string.sub(leftchars, pos) or ""
+	local pos_start_of_non_ascii_segments, _ = vim.regex("[^[:alnum:][:punct:][:space:]]\\+$"):match_str(leftchars)
+	local leftchars_utf8 = pos_start_of_non_ascii_segments and string.sub(leftchars, pos_start_of_non_ascii_segments)
+		or ""
 	local segments = parse(leftchars_utf8 .. rightchars_utf8)
 	if #segments <= 1 then
 		if pos_next_ascii then
@@ -121,10 +122,13 @@ M.find_forward = function(opts)
 	end
 
 	local n = #leftchars - #leftchars_utf8
-	for _, segment in pairs(segments) do
+	for i, segment in pairs(segments) do
 		n = n + #segment
 		if n > col then
 			if opts.head then
+				if i == #segments and not pos_next_ascii then
+					return _find_forward_in_next_line(row, opts.head)
+				end
 				return { row = row, col = n }
 			else
 				error("Unimplemented")
