@@ -80,4 +80,21 @@ T["Cursor on the %w or %p"]["W motion"] = function(prefix, suffix)
 	MiniTest.expect.equality(pos, { row = 1, col = #prefix })
 end
 
+T["Cursor on Japanese segment"] = MiniTest.new_set({
+	parametrize = {
+		{ { "今日は", "GOOD" } },
+	},
+})
+
+T["Cursor on Japanese segment"]["W motion"] = function(segments)
+	local line = table.concat(segments)
+	local pos = M.find_forward({
+		row = 1,
+		col = 0,
+		curline = line,
+		head = true,
+	})
+	MiniTest.expect.equality(pos, { row = 1, col = #segments[1] })
+end
+
 return T

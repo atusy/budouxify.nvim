@@ -98,6 +98,21 @@ M.find_forward = function(opts)
 		end
 	end
 
+	local _, pos_next_1_byte_char = rightchars:find("[%w%p%s]")
+	local rightchars_utf8 = pos_next_1_byte_char and string.sub(rightchars, 1, pos_next_1_byte_char - 1) or rightchars
+	local segments = parse(rightchars_utf8)
+	if #segments <= 1 then
+		if pos_next_1_byte_char then
+			if opts.head then
+				return { row = row, col = col + pos_next_1_byte_char - 1 }
+			else
+				error("Unimplemented")
+			end
+		else
+			return _find_forward_in_next_line(row, opts.head)
+		end
+	end
+
 	error("Unimplemented")
 end
 
