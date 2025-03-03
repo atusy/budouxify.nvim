@@ -88,13 +88,20 @@ T["Cursor on Japanese segment"] = MiniTest.new_set({
 
 T["Cursor on Japanese segment"]["W motion"] = function(segments)
 	local line = table.concat(segments)
-	local pos = M.find_forward({
-		row = 1,
-		col = 0,
-		curline = line,
-		head = true,
-	})
-	MiniTest.expect.equality(pos, { row = 1, col = #segments[1] })
+	local segmentchars = vim.fn.split(segments[1], "\\zs")
+	local col = 0
+	for i, _ in pairs(segmentchars) do
+		if i > 1 then
+			col = col + #segmentchars[i - 1]
+		end
+		local pos = M.find_forward({
+			row = 1,
+			col = col,
+			curline = line,
+			head = true,
+		})
+		MiniTest.expect.equality(pos, { row = 1, col = #segments[1] })
+	end
 end
 
 return T

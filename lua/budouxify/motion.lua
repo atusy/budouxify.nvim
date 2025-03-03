@@ -100,7 +100,10 @@ M.find_forward = function(opts)
 
 	local _, pos_next_1_byte_char = rightchars:find("[%w%p%s]")
 	local rightchars_utf8 = pos_next_1_byte_char and string.sub(rightchars, 1, pos_next_1_byte_char - 1) or rightchars
-	local segments = parse(rightchars_utf8)
+	local leftchars = string.sub(curline, 1, col)
+	local pos, _ = vim.regex("[^[:alnum:][:punct:][:space:]]\\+$"):match_str(leftchars)
+	local leftchars_utf8 = pos and string.sub(leftchars, pos) or ""
+	local segments = parse(leftchars_utf8 .. rightchars_utf8)
 	if #segments <= 1 then
 		if pos_next_1_byte_char then
 			if opts.head then
