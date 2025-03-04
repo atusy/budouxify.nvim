@@ -118,6 +118,7 @@ M.find_forward = function(opts)
 		end
 	end
 
+	-- カーソル位置が日本語
 	local pos_next_ascii, _ = vim.regex("[[:alnum:][:punct:][:space:]]"):match_str(rightchars)
 	local rightchars_utf8 = pos_next_ascii and string.sub(rightchars, 1, pos_next_ascii) or rightchars
 	local leftchars = string.sub(curline, 1, col)
@@ -131,7 +132,7 @@ M.find_forward = function(opts)
 				return { row = row, col = col + pos_next_ascii }
 			else
 				local n = vim.regex(".[[:alnum:][:punct:][:space:]]"):match_str(rightchars)
-				return { row = row, col = col + n - 1 }
+				return { row = row, col = col + n }
 			end
 		else
 			return _find_forward_in_next_line(row, opts.head)
@@ -148,7 +149,8 @@ M.find_forward = function(opts)
 				end
 				return { row = row, col = n }
 			else
-				error("Unimplemented")
+				local x, y = vim.regex(".$"):match_str(string.sub(curline, 1, n))
+				return { row = row, col = n - y + x }
 			end
 		end
 	end
