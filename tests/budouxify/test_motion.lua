@@ -8,13 +8,15 @@ T["Cursor virtually on the end of the line"] = function()
 	MiniTest.skip("TODO: This test requires real buffer")
 end
 
-T["Cursor on the space"] =
-	MiniTest.new_set({ parametrize = {
+T["Cursor on the space"] = MiniTest.new_set({
+	parametrize = {
 		{ "    " },
 		{ "　　" },
 		{ "  　" },
 		{ "　  " },
-	} })
+		{ "	" }, -- tab
+	},
+})
 
 T["Cursor on the space"]["W motion"] = MiniTest.new_set({
 	parametrize = {
