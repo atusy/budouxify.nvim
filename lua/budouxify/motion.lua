@@ -149,8 +149,11 @@ M.find_forward = function(opts)
 			if opts.head then
 				return { row = row, col = col + pos_next_ascii }
 			else
-				local n = vim.regex(".[[:alnum:][:punct:]]"):match_str(rightchars)
-				return { row = row, col = col + n }
+				local n, m = vim.regex(".[[:alnum:][:punct:]]\\+"):match_str(rightchars)
+				if n > 0 then
+					return { row = row, col = col + n }
+				end
+				return { row = row, col = col + m - 1 }
 			end
 		elseif pos_next_space then
 			local i1, i2 = vim.regex("^."):match_str(rightchars)
