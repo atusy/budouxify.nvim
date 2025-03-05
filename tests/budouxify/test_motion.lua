@@ -140,11 +140,11 @@ T["Cursor on non-ASCII WORD"] = MiniTest.new_set({
 		} },
 		{ {
 			curline = "今日は天気です。GOOD",
-			cursors = "　　　＾　　　ＥW",
+			cursors = "＾　ＥＷ",
 		} },
 		{ {
-			curline = " 今日は天気です。GOOD",
-			cursors = " 　　　＾　　　ＥW",
+			curline = "今日は天気です。GOOD",
+			cursors = "　　　＾　　　ＥW",
 		} },
 		{ {
 			curline = "abc今日は天気です。GOOD",
