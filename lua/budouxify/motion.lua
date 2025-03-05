@@ -134,21 +134,36 @@ M.find_forward = function(opts)
 	end
 
 	-- カーソル位置が日本語
-	local pos_next_ascii, _ = vim.regex("[[:alnum:][:punct:][:space:]]"):match_str(rightchars)
-	local rightchars_utf8 = pos_next_ascii and string.sub(rightchars, 1, pos_next_ascii) or rightchars
+	local pos_next_ascii, _ = vim.regex("[[:alnum:][:punct:]]"):match_str(rightchars)
+	local pos_next_space, _ = vim.regex("[[:space:]　]"):match_str(rightchars)
+	local rightchars_utf8 = (pos_next_ascii or pos_next_space)
+			and string.sub(rightchars, 1, math.min(pos_next_ascii or math.huge, pos_next_space or math.huge))
+		or rightchars
 	local leftchars = string.sub(curline, 1, col)
 	local pos_start_of_non_ascii_segments, _ = vim.regex("[^[:alnum:][:punct:][:space:]]\\+$"):match_str(leftchars)
 	local leftchars_utf8 = pos_start_of_non_ascii_segments and string.sub(leftchars, pos_start_of_non_ascii_segments)
 		or ""
 	local segments = parse(leftchars_utf8 .. rightchars_utf8)
 	if #segments <= 1 then
-		if pos_next_ascii then
+		if pos_next_ascii and (not pos_next_space or pos_next_ascii < pos_next_space) then
 			if opts.head then
 				return { row = row, col = col + pos_next_ascii }
 			else
-				local n = vim.regex(".[[:alnum:][:punct:][:space:]]"):match_str(rightchars)
+				local n = vim.regex(".[[:alnum:][:punct:]]"):match_str(rightchars)
 				return { row = row, col = col + n }
 			end
+		elseif pos_next_space then
+			local i1, i2 = vim.regex("^."):match_str(rightchars)
+			if opts.head or (i2 - i1 + 1) == pos_next_space then
+				return M.find_forward({
+					row = row,
+					col = col + pos_next_space,
+					curline = curline,
+					head = opts.head,
+				})
+			end
+			local j1, _ = vim.regex(".$"):match_str(segments[1])
+			return { row = row, col = col + j1 }
 		else
 			if opts.head then
 				return _find_forward_in_next_line(row, opts.head)
