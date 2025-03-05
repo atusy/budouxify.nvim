@@ -8,8 +8,9 @@ T["Cursor virtually on the end of the line"] = function()
 	MiniTest.skip("TODO: This test requires real buffer")
 end
 
-T["_"] = MiniTest.new_set({
+T["Cursor on the space"] = MiniTest.new_set({
 	parametrize = {
+		-- single WORD
 		{ {
 			curline = "   aaa",
 			cursors = "^  W E",
@@ -26,10 +27,49 @@ T["_"] = MiniTest.new_set({
 			curline = "　  あいう",
 			cursors = "＾  Ｗ　Ｅ",
 		} },
+		-- more WORDs
+		{ {
+			curline = "   a2% aaa",
+			cursors = "^  W E",
+		} },
+		{ {
+			curline = "　　1b% aaa",
+			cursors = "＾　W E",
+		} },
+		{ {
+			curline = "  　%2c aaa",
+			cursors = "^ 　W E",
+		} },
+		{ {
+			curline = "　  あいう aaa",
+			cursors = "＾  Ｗ　Ｅ",
+		} },
+		-- single ASCII WORD followed by Japanese character
+		{ {
+			curline = "   a2%あ",
+			cursors = "^  W E",
+		} },
+		{ {
+			curline = "　　1b%あ",
+			cursors = "＾　W E",
+		} },
+		{ {
+			curline = "  　%2cあ",
+			cursors = "^ 　W E",
+		} },
+		-- A Japanese WORD followed by something
+		{ {
+			curline = "　  今日はGOOD",
+			cursors = "＾  Ｗ　Ｅ",
+		} },
+		{ {
+			curline = "　  今日は天気です。",
+			cursors = "＾  Ｗ　Ｅ",
+		} },
 	},
 })
 
-T["_"]["W"] = function(params)
+T["Cursor on the space"]["W"] = function(params)
 	local from = vim.regex("[^＾]"):match_str(params.cursors)
 	local to = vim.regex("[WＷ]"):match_str(params.cursors)
 	local given = M.find_forward({
@@ -41,57 +81,16 @@ T["_"]["W"] = function(params)
 	MiniTest.expect.equality(given, { row = 1, col = to })
 end
 
-T["Cursor on the space"] = MiniTest.new_set({
-	parametrize = {
-		{ "    " },
-		{ "　　" },
-		{ "  　" },
-		{ "　  " },
-		{ "	" }, -- tab
-	},
-})
-
-T["Cursor on the space"]["E motion when next WORD starts with %p or %w"] = MiniTest.new_set({
-	parametrize = {
-		{ "abc", " def" },
-		{ "!@$", " def" },
-		{ "123", " def" },
-		{ "a@3", " def" },
-		{ "abc", "あいう" },
-		{ "!@$", "あいう" },
-		{ "123", "あいう" },
-		{ "a@3", "あいう" },
-		--   E
-	},
-})
-
-T["Cursor on the space"]["E motion when next WORD starts with %p or %w"]["_"] = function(prefix, WORD, suffix)
-	local pos = M.find_forward({
+T["Cursor on the space"]["E"] = function(params)
+	local from = vim.regex("[^＾]"):match_str(params.cursors)
+	local to = vim.regex("[EＥ]"):match_str(params.cursors)
+	local given = M.find_forward({
 		row = 1,
-		col = 0,
-		curline = prefix .. WORD .. suffix,
+		col = from,
+		curline = params.curline,
 		head = false,
 	})
-	MiniTest.expect.equality(pos, { row = 1, col = prefix:len() + WORD:len() - 1 })
-end
-
-T["Cursor on the space"]["E motion when next WORD starts with Japanese"] = MiniTest.new_set({
-	parametrize = {
-		{ "今日は", "" },
-		{ "今日は", "GOOD" },
-		{ "今日は", "天気です。" },
-		--     E
-	},
-})
-
-T["Cursor on the space"]["E motion when next WORD starts with Japanese"]["_"] = function(prefix, WORD, suffix)
-	local pos = M.find_forward({
-		row = 1,
-		col = 0,
-		curline = prefix .. WORD .. suffix,
-		head = false,
-	})
-	MiniTest.expect.equality(pos, { row = 1, col = prefix:len() + #"今日" })
+	MiniTest.expect.equality(given, { row = 1, col = to })
 end
 
 T["Cursor on the %w or %p"] = MiniTest.new_set({
