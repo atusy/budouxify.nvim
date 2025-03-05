@@ -87,28 +87,21 @@ T["Cursor on the space"] = MiniTest.new_set({
 	},
 })
 
-T["Cursor on the space"]["W"] = function(params)
-	local from = vim.regex("[^＾]"):match_str(params.cursors)
-	local to = vim.regex("[WＷ]"):match_str(params.cursors)
-	local given = M.find_forward({
-		row = 1,
-		col = from,
-		curline = params.curline,
-		head = true,
-	})
-	MiniTest.expect.equality(given, { row = 1, col = to })
-end
-
-T["Cursor on the space"]["E"] = function(params)
-	local from = vim.regex("[^＾]"):match_str(params.cursors)
-	local to = vim.regex("[EＥ]"):match_str(params.cursors)
-	local given = M.find_forward({
-		row = 1,
-		col = from,
-		curline = params.curline,
-		head = false,
-	})
-	MiniTest.expect.equality(given, { row = 1, col = to })
+for motion, cond in pairs({
+	W = { head = true, regex = "[WＷ]" },
+	E = { head = false, regex = "[EＥ]" },
+}) do
+	T["Cursor on the space"][motion] = function(params)
+		local from = vim.regex("[^＾]"):match_str(params.cursors)
+		local to = vim.regex(cond.regex):match_str(params.cursors)
+		local given = M.find_forward({
+			row = 1,
+			col = from,
+			curline = params.curline,
+			head = cond.head,
+		})
+		MiniTest.expect.equality(given, { row = 1, col = to })
+	end
 end
 
 T["Cursor on the %w or %p"] = MiniTest.new_set({
