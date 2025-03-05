@@ -76,7 +76,7 @@ T["Cursor on the space"]["E motion when next WORD starts with Japanese"]["_"] = 
 		curline = prefix .. WORD .. suffix,
 		head = false,
 	})
-	MiniTest.expect.equality(pos, { row = 1, col = prefix:len() + #"今日" - 1 })
+	MiniTest.expect.equality(pos, { row = 1, col = prefix:len() + #"今日" })
 end
 
 T["Cursor on the %w or %p"] = MiniTest.new_set({
