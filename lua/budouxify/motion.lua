@@ -192,7 +192,11 @@ M.find_forward = function(opts)
 		end
 	end
 
-	error("Unimplemented")
+	vim.notify(
+		"Unexpected case."
+			.. " Please report the situation withh following information:"
+			.. " parameters, current line, and cursor position"
+	)
 end
 
 return M
