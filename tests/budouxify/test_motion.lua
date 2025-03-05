@@ -8,6 +8,39 @@ T["Cursor virtually on the end of the line"] = function()
 	MiniTest.skip("TODO: This test requires real buffer")
 end
 
+T["_"] = MiniTest.new_set({
+	parametrize = {
+		{ {
+			curline = "   aaa",
+			cursors = "^  W E",
+		} },
+		{ {
+			curline = "　　123",
+			cursors = "＾　W E",
+		} },
+		{ {
+			curline = "  　%%%",
+			cursors = "^ 　W E",
+		} },
+		{ {
+			curline = "　  あいう",
+			cursors = "＾  Ｗ　Ｅ",
+		} },
+	},
+})
+
+T["_"]["W"] = function(params)
+	local from = vim.regex("[^＾]"):match_str(params.cursors)
+	local to = vim.regex("[WＷ]"):match_str(params.cursors)
+	local given = M.find_forward({
+		row = 1,
+		col = from,
+		curline = params.curline,
+		head = true,
+	})
+	MiniTest.expect.equality(given, { row = 1, col = to })
+end
+
 T["Cursor on the space"] = MiniTest.new_set({
 	parametrize = {
 		{ "    " },
@@ -17,25 +50,6 @@ T["Cursor on the space"] = MiniTest.new_set({
 		{ "	" }, -- tab
 	},
 })
-
-T["Cursor on the space"]["W motion"] = MiniTest.new_set({
-	parametrize = {
-		{ "aaa" },
-		{ "123" },
-		{ "%%%" },
-		{ "あいう" },
-	},
-})
-
-T["Cursor on the space"]["W motion"]["_"] = function(spaces, WORD)
-	local pos = M.find_forward({
-		row = 1,
-		col = 0,
-		curline = spaces .. WORD,
-		head = true,
-	})
-	MiniTest.expect.equality(pos, { row = 1, col = spaces:len() })
-end
 
 T["Cursor on the space"]["E motion when next WORD starts with %p or %w"] = MiniTest.new_set({
 	parametrize = {
