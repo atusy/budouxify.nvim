@@ -101,6 +101,34 @@ T["Cursor on the %w or %p"]["W motion"] = function(prefix, suffix)
 	MiniTest.expect.equality(pos, { row = 1, col = #prefix })
 end
 
+T["Cursor on the %w or %p"]["E motion at the end of [%w%p]+"] = function(prefix, suffix)
+	-- abc xxx
+	--   ^   E
+	-- abcあいう
+	--   ^    E
+	local pos = M.find_forward({
+		row = 1,
+		col = 2,
+		curline = prefix .. suffix,
+		head = false,
+	})
+	local d1, d2 = vim.regex(".$"):match_str(suffix)
+	MiniTest.expect.equality(pos, { row = 1, col = #(prefix .. suffix) - d2 + d1 })
+end
+
+T["Cursor on the %w or %p"]["E motion not at the end of [%w%p]+"] = function(prefix, suffix)
+	-- abc xxx
+	-- abcあいう
+	-- ^ E
+	local pos = M.find_forward({
+		row = 1,
+		col = 0,
+		curline = prefix .. suffix,
+		head = false,
+	})
+	MiniTest.expect.equality(pos, { row = 1, col = 2 })
+end
+
 T["Cursor on Japanese segment"] = MiniTest.new_set({
 	-- { { "今日は", "天気です。", "GOOD" }, 2 }
 	-- の場合、2番目のセグメントにカーソルを置いたときの挙動をテスト

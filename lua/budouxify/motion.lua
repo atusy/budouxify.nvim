@@ -94,19 +94,35 @@ M.find_forward = function(opts)
 	if vim.regex("^[[:alnum:][:punct:]]\\+[[:space:]　]"):match_str(rightchars) then
 		-- 直後にスペース
 		-- カーソルが空白文字にあるとみなして再帰
-		return M.find_forward({
-			row = row,
-			col = col + #string.match(rightchars, "^[%w%p]+"),
-			curline = curline,
-			head = opts.head,
-		})
+		local length = #string.match(rightchars, "^[%w%p]+")
+		if opts.head or length == 1 then
+			return M.find_forward({
+				row = row,
+				col = col + length,
+				curline = curline,
+				head = opts.head,
+			})
+		end
+		return { row = row, col = col + length - 1 }
 	elseif vim.regex("^[[:alnum:][:punct:]]\\+."):match_str(rightchars) then
 		-- 直後に日本語
+		-- abc今日は
+		-- ^ EW
+		--   ^W   E
+		local _, length = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rightchars)
 		if opts.head then
 			local _, length = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rightchars)
 			return { row = row, col = col + length }
 		else
-			error("Unimplemented")
+			if length == 1 then
+				return M.find_forward({
+					row = row,
+					col = col + 1,
+					curline = curline,
+					head = false,
+				})
+			end
+			return { row = row, col = col + length - 1 }
 		end
 	end
 
@@ -135,7 +151,11 @@ M.find_forward = function(opts)
 				return { row = row, col = col + n }
 			end
 		else
-			return _find_forward_in_next_line(row, opts.head)
+			if opts.head then
+				return _find_forward_in_next_line(row, opts.head)
+			end
+			local x, _ = vim.regex(".$"):match_str(rightchars)
+			return { row = row, col = col + x }
 		end
 	end
 
