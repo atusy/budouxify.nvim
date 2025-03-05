@@ -26,6 +26,7 @@ T["Cursor on the space"]["W motion"] = MiniTest.new_set({
 		{ "あいう" },
 	},
 })
+
 T["Cursor on the space"]["W motion"]["_"] = function(spaces, WORD)
 	local pos = M.find_forward({
 		row = 1,
@@ -46,7 +47,7 @@ T["Cursor on the space"]["E motion when next WORD starts with %p or %w"] = MiniT
 		{ "!@$", "あいう" },
 		{ "123", "あいう" },
 		{ "a@3", "あいう" },
-		--   ^cursor
+		--   E
 	},
 })
 
@@ -91,6 +92,7 @@ T["Cursor on the %w or %p"] = MiniTest.new_set({
 		{ "a%3", "あいう" },
 	},
 })
+
 T["Cursor on the %w or %p"]["W motion"] = function(prefix, suffix)
 	local pos = M.find_forward({
 		row = 1,
