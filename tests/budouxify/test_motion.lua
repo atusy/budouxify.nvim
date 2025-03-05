@@ -87,72 +87,64 @@ T["Cursor on the space"] = MiniTest.new_set({
 	},
 })
 
-for motion, cond in pairs({
-	W = { head = true, regex = "[WＷ]" },
-	E = { head = false, regex = "[EＥ]" },
-}) do
-	T["Cursor on the space"][motion] = function(params)
-		local from = vim.regex("[\\^＾]"):match_str(params.cursors)
-		local to = vim.regex(cond.regex):match_str(params.cursors)
-		local given = M.find_forward({
-			row = 1,
-			col = from,
-			curline = params.curline,
-			head = cond.head,
-		})
-		MiniTest.expect.equality(given, { row = 1, col = to })
-	end
-end
-
-T["Cursor on the %w or %p"] = MiniTest.new_set({
+T["Cursor on [%w%p]"] = MiniTest.new_set({
 	parametrize = {
-		{ "abc ", "xxx" },
-		{ "abc   ", "123" },
-		{ "abc　　", "%%%" },
-		{ "abc　  ", "あいう" },
-		{ "abc", "あいう" },
-		{ "%%%", "あいう" },
-		{ "123", "あいう" },
-		{ "a%3", "あいう" },
+		{ {
+			curline = "abc def",
+			cursors = "^ E W",
+		} },
+		{ {
+			curline = "abc def",
+			cursors = "  ^ W E",
+		} },
+		{ {
+			curline = "abc   123",
+			cursors = "^ E   W",
+		} },
+		{ {
+			curline = "abc   123",
+			cursors = "  ^   W E",
+		} },
+		{ {
+			curline = "abc　　%%%",
+			cursors = "  ^　　W E",
+		} },
+		{ {
+			curline = "abc　  あいう",
+			cursors = "^ E　  Ｗ",
+		} },
+		{ {
+			curline = "abc　  あいう",
+			cursors = "  ^　  Ｗ　Ｅ",
+		} },
+		{ {
+			curline = "abcあいう",
+			cursors = "^ EＷ",
+		} },
+		{ {
+			curline = "abcあいう",
+			cursors = "  ^Ｗ　Ｅ",
+		} },
 	},
 })
 
-T["Cursor on the %w or %p"]["W motion"] = function(prefix, suffix)
-	local pos = M.find_forward({
-		row = 1,
-		col = 0,
-		curline = prefix .. suffix,
-		head = true,
-	})
-	MiniTest.expect.equality(pos, { row = 1, col = #prefix })
-end
-
-T["Cursor on the %w or %p"]["E motion at the end of [%w%p]+"] = function(prefix, suffix)
-	-- abc xxx
-	--   ^   E
-	-- abcあいう
-	--   ^    E
-	local pos = M.find_forward({
-		row = 1,
-		col = 2,
-		curline = prefix .. suffix,
-		head = false,
-	})
-	local d1, d2 = vim.regex(".$"):match_str(suffix)
-	MiniTest.expect.equality(pos, { row = 1, col = #(prefix .. suffix) - d2 + d1 })
-end
-
-T["Cursor on the %w or %p"]["E motion not at the end of [%w%p]+"] = function(prefix, suffix)
-	-- abc xxx
-	-- abcあいう
-	-- ^ E
-	local pos = M.find_forward({
-		row = 1,
-		col = 0,
-		curline = prefix .. suffix,
-		head = false,
-	})
-	MiniTest.expect.equality(pos, { row = 1, col = 2 })
+for _, case in pairs({ "Cursor on [%s　]", "Cursor on [%w%p]" }) do
+	for motion, cond in pairs({
+		W = { head = true, regex = "[WＷ]" },
+		E = { head = false, regex = "[EＥ]" },
+	}) do
+		T[case][motion] = function(params)
+			local from = vim.regex("[\\^＾]"):match_str(params.cursors)
+			local to = vim.regex(cond.regex):match_str(params.cursors)
+			local given = M.find_forward({
+				row = 1,
+				col = from,
+				curline = params.curline,
+				head = cond.head,
+			})
+			MiniTest.expect.equality(given, { row = 1, col = to })
+		end
+	end
 end
 
 T["Cursor on Japanese segment"] = MiniTest.new_set({
