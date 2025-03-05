@@ -16,12 +16,30 @@ T["Cursor on the space"] = MiniTest.new_set({
 			cursors = "^  W E",
 		} },
 		{ {
+			curline = "   aaa",
+			cursors = " ^ W E",
+		} },
+		{ {
+			curline = "   aaa",
+			cursors = "  ^W E",
+		} },
+		{
+			{
+				curline = "		aaa", -- tab
+				cursors = "^ W E",
+			},
+		},
+		{ {
 			curline = "　　123",
 			cursors = "＾　W E",
 		} },
 		{ {
 			curline = "  　%%%",
 			cursors = "^ 　W E",
+		} },
+		{ {
+			curline = "  　%%%",
+			cursors = "  ＾W E",
 		} },
 		{ {
 			curline = "　  あいう",
@@ -63,8 +81,8 @@ T["Cursor on the space"] = MiniTest.new_set({
 			cursors = "＾  Ｗ　Ｅ",
 		} },
 		{ {
-			curline = "　  今日は天気です。",
-			cursors = "＾  Ｗ　Ｅ",
+			curline = "  　今日は天気です。",
+			cursors = "  ＾Ｗ　Ｅ",
 		} },
 	},
 })
