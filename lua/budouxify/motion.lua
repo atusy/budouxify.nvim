@@ -111,7 +111,6 @@ M.find_forward = function(opts)
 		--   ^W   E
 		local _, length = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rightchars)
 		if opts.head then
-			local _, length = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rightchars)
 			return { row = row, col = col + length }
 		else
 			if length == 1 then
