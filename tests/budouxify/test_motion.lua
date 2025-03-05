@@ -92,7 +92,7 @@ for motion, cond in pairs({
 	E = { head = false, regex = "[EＥ]" },
 }) do
 	T["Cursor on the space"][motion] = function(params)
-		local from = vim.regex("[^＾]"):match_str(params.cursors)
+		local from = vim.regex("[\\^＾]"):match_str(params.cursors)
 		local to = vim.regex(cond.regex):match_str(params.cursors)
 		local given = M.find_forward({
 			row = 1,
