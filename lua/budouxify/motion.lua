@@ -3,17 +3,26 @@ local M = {}
 ---@param row number
 ---@param head boolean
 ---@return { row: number, col: number } | nil
-local function _find_forward_in_next_line(row, head)
+function M._find_forward_in_next_line(row, head)
+	local line = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
+
 	-- 最終行の行末なら移動しない
-	local lastrow = vim.api.nvim_buf_line_count(0)
-	if row == lastrow then
+	if not line then
 		return nil
 	end
 
-	-- 次の行があるなら試す
-	return M.find_forward({
+	-- 次の行の行頭に行く
+	-- * W: 行頭が空白文字以外
+	-- * E: 行頭が空白文字以外で次が空白文字
+	if line:find("^[^%s　]") and (head or line:find("^[^%s　][%s　]")) then
+		return { row = row + 1, col = 0 }
+	end
+
+	-- その他
+	return M._find_forward({
 		row = row + 1,
 		col = 0,
+		curline = line,
 		head = head,
 	})
 end
