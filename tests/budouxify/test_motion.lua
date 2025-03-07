@@ -4,98 +4,128 @@ local T = MiniTest.new_set()
 
 local M = require("budouxify.motion")
 
-T["Cursor virtually on the end of the line"] = MiniTest.new_set({
-	parametrize = {
+local parameters_list = {
+	["Cursor virtually on the end of the line"] = {
 		{
 			{
-				"  ^",
+				"  ^", -- cursor
 				"abc",
 				"a c",
-				"|",
+				"|  ", -- jump
 			},
 		},
 		{
 			{
-				"  ^",
+				"  ^", -- curosor
 				"abc",
 				"  c",
-				"  |",
+				"  |", -- jump
 			},
 		},
 		{
 			{
-				"  ^",
+				"  ^", -- cursor
 				"abc",
 				"",
 				"  ",
 				"　　 	",
 				"  c",
-				"  |",
+				"  |", -- jump
 			},
 		},
 		{
 			{
-				"  ^",
+				"  ^", -- cursor
 				"abc",
 				"  abc",
-				"  W E",
+				"  W E", -- jump
 			},
 		},
 		{
 			{
-				"  ^",
+				"  ^", -- cursor
 				"abc",
 				"あ c",
-				"｜",
+				"｜  ", -- jump
 			},
 		},
 		{
 			{
-				"  ^",
+				"  ^ ", -- cursor
 				"abc ",
-				"   |",
+				"   |", -- jump
 			},
 		},
 		-- at the end of last line
 		{
 			{
-				"  ^",
+				"  ^", -- cursor
 				"abc",
-				"<nil>",
 			},
 		},
 	},
-})
+}
 
-for motion, cond in pairs({
-	W = { head = true, regex = "[WＷ|｜]" },
-	E = { head = false, regex = "[EＥ|｜]" },
-}) do
-	T["Cursor virtually on the end of the line"][motion] = function(params)
-		local lines = {}
-		for i = 2, #params - 1 do
-			table.insert(lines, params[i])
-		end
-		local buf = vim.api.nvim_create_buf(false, true)
-		local col = vim.regex("[\\^＾]"):match_str(params[1])
-		vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-		vim.api.nvim_win_set_buf(0, buf)
-		vim.api.nvim_win_set_cursor(0, { 1, col })
-		local ok, pos = pcall(M.find_forward, {
-			buf = buf,
-			row = 1,
-			col = col,
-			head = cond.head,
-			error_handler = error,
-		})
-		vim.api.nvim_buf_delete(buf, { force = true })
-		if not ok then
-			error(pos)
-		end
-		if params[#params] == "<nil>" then
-			MiniTest.expect.equality(pos, nil)
-		else
-			MiniTest.expect.equality(pos, { row = #lines, col = vim.regex(cond.regex):match_str(params[#params]) })
+for name, parameters in pairs(parameters_list) do
+	T[name] = MiniTest.new_set({
+		parametrize = parameters,
+	})
+
+	for motion, cond in pairs({
+		W = { head = true, regex = "[WＷ|｜]" },
+		E = { head = false, regex = "[EＥ|｜]" },
+	}) do
+		T[name][motion] = function(parameter)
+			-- setup variables
+			local lines = {}
+			local pos_cursor = { 1, 0 }
+			local pos_expect = nil ---@type nil | { [1]: number, [2]: number }
+			for _, p in ipairs(parameter) do
+				if not vim.regex("[WＷEＥ|｜^＾]"):match_str(p) then
+					table.insert(lines, p)
+				else
+					local col_cursor = vim.regex("[\\^＾]"):match_str(p)
+					if col_cursor then
+						pos_cursor = { #lines + 1, col_cursor }
+					end
+					local col_jump = vim.regex(cond.regex):match_str(p)
+					if col_jump then
+						if col_cursor then
+							pos_expect = { #lines + 1, col_jump }
+						else
+							pos_expect = { #lines, col_jump }
+						end
+					end
+				end
+			end
+
+			-- setup buffer
+			local buf = vim.api.nvim_create_buf(false, true)
+			vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+			vim.api.nvim_win_set_buf(0, buf)
+			vim.api.nvim_win_set_cursor(0, pos_cursor)
+
+			-- test
+			local ok, pos_found = pcall(M.find_forward, {
+				buf = buf,
+				row = pos_cursor[1],
+				col = pos_cursor[2],
+				head = cond.head,
+				error_handler = error,
+			})
+
+			-- teardown buffer
+			vim.api.nvim_buf_delete(buf, { force = true })
+
+			-- assertion
+			if not ok then
+				error(pos_found)
+			end
+			if pos_expect == nil then
+				MiniTest.expect.equality(pos_found, nil)
+			else
+				MiniTest.expect.equality(pos_found, { row = pos_expect[1], col = pos_expect[2] })
+			end
 		end
 	end
 end
