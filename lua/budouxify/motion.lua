@@ -1,25 +1,36 @@
 local M = {}
 
+---@param buf number
 ---@param row number
 ---@param head boolean
 ---@return { row: number, col: number } | nil
-function M._find_forward_in_next_line(row, head)
-	local line = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
+function M._find_forward_in_next_line(buf, row, head)
+	local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1]
+
+	if line == "" then
+		return M._find_forward_in_next_line(buf, row + 1, head)
+	end
 
 	-- 最終行の行末なら移動しない
 	if not line then
+		local col2 = vim.regex(".$"):match_str(vim.api.nvim_buf_get_lines(buf, row - 1, row, true)[1])
+		local cursor = vim.api.nvim_win_get_cursor(0) -- TODO: カーソル取得しなくても解けるようにしたい
+		if cursor[1] == row and cursor[2] ~= col2 then
+			return { row = row, col = col2 }
+		end
 		return nil
 	end
 
 	-- 次の行の行頭に行く
 	-- * W: 行頭が空白文字以外
 	-- * E: 行頭が空白文字以外で次が空白文字
-	if line:find("^[^%s　]") and (head or line:find("^[^%s　][%s　]")) then
+	if not vim.regex("^[[:space:]　]"):match_str(line) and (head or line:find("^[^%s　][%s　]")) then
 		return { row = row + 1, col = 0 }
 	end
 
 	-- その他
 	return M._find_forward({
+		buf = buf,
 		row = row + 1,
 		col = 0,
 		curline = line,
@@ -41,44 +52,47 @@ function M._solve_cursor(row, col)
 	error("row and col must be both set or both nil")
 end
 
----@param opts { row: number?, col: number?, curline: string?, head: boolean }
+---@param opts { head: boolean, row: number?, col: number?, curline: string?, buf: number?, error_handler?: function }
 ---@return { row: number, col: number } | nil
 function M.find_forward(opts)
+	local handle_error = opts.error_handler or function(err)
+		vim.notify(tostring(err), vim.log.levels.ERROR)
+	end
 	-- setup opts
 	local ok, row, col = pcall(M._solve_cursor, opts.row, opts.col)
 	if not ok then
-		vim.notify(tostring(row), vim.log.levels.ERROR)
+		handle_error(tostring(row))
 	end
-	local curline = opts.curline or vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
-	local opts2 = vim.tbl_extend("force", opts, { row = row, col = col, curline = curline })
+	local buf = opts.buf or vim.api.nvim_get_current_buf()
+	local curline = opts.curline or vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1]
+	local opts2 = vim.tbl_extend("force", opts, { row = row, col = col, curline = curline, buf = buf })
 
 	-- find jump position
 	local ok2, pos = pcall(M._find_forward, opts2)
 	if not ok2 then
-		vim.notify(tostring(pos), vim.log.levels.ERROR)
+		handle_error(tostring(pos))
 		return nil
 	end
 	if pos and pos.row == row and pos.col == col then
-		vim.notify("Unexpected case: cursor is not moved", vim.log.levels.ERROR)
+		handle_error("Unexpected case: cursor is not moved")
 		return nil
 	end
 	return pos
 end
 
----@param opts { row: number, col: number, curline: string, head: boolean }
+---@param opts { row: number, col: number, curline: string, head: boolean, buf: number }
 ---@return { row: number, col: number } | nil
 function M._find_forward(opts)
 	---@type fun(string): string[]
 	local parse = require("budoux").load_japanese_model().parse
 
-	local row, col = opts.row, opts.col
-	local curline = opts.curline or vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
+	local row, col, curline = opts.row, opts.col, opts.curline
 	local rightchars = string.sub(curline, col + 1) -- including the current char
 
 	-- 行末処理
 	if rightchars == "" or not vim.regex(".."):match_str(rightchars) then
 		--TODO: implement test
-		return M._find_forward_in_next_line(row, opts.head)
+		return M._find_forward_in_next_line(opts.buf, opts.row, opts.head)
 	end
 
 	-- カーソル位置が空白文字
@@ -88,7 +102,7 @@ function M._find_forward(opts)
 	if prefix_spaces then
 		if string.find(rightchars, "^[%s　]+$") then
 			--TODO: implement test
-			return M._find_forward_in_next_line(row, opts.head)
+			return M._find_forward_in_next_line(opts.buf, row, opts.head)
 		end
 
 		-- W
@@ -103,7 +117,8 @@ function M._find_forward(opts)
 		else
 			--   あいうえお
 			--   ^cursor E
-			local pos_W = M.find_forward({
+			local pos_W = M._find_forward({
+				buf = opts.buf,
 				row = row,
 				col = col + prefix_spaces,
 				curline = curline,
@@ -114,7 +129,8 @@ function M._find_forward(opts)
 				return { row = row, col = col + x }
 			end
 
-			local pos_E = M.find_forward({
+			local pos_E = M._find_forward({
+				buf = opts.buf,
 				row = row,
 				col = col + prefix_spaces,
 				curline = curline,
@@ -130,7 +146,8 @@ function M._find_forward(opts)
 		-- カーソルが空白文字にあるとみなして再帰
 		local length = #string.match(rightchars, "^[%w%p]+")
 		if opts.head or length == 1 then
-			return M.find_forward({
+			return M._find_forward({
+				buf = opts.buf,
 				row = row,
 				col = col + length,
 				curline = curline,
@@ -148,7 +165,8 @@ function M._find_forward(opts)
 			return { row = row, col = col + length }
 		else
 			if length == 1 then
-				return M.find_forward({
+				return M._find_forward({
+					buf = opts.buf,
 					row = row,
 					col = col + 1,
 					curline = curline,
@@ -191,7 +209,8 @@ function M._find_forward(opts)
 		elseif pos_next_space then
 			local i1, i2 = vim.regex("^."):match_str(rightchars)
 			if opts.head or (i2 - i1 + 1) == pos_next_space then
-				return M.find_forward({
+				return M._find_forward({
+					buf = opts.buf,
 					row = row,
 					col = col + pos_next_space,
 					curline = curline,
@@ -202,7 +221,7 @@ function M._find_forward(opts)
 			return { row = row, col = col + j1 }
 		else
 			if opts.head then
-				return M._find_forward_in_next_line(row, opts.head)
+				return M._find_forward_in_next_line(opts.buf, row, opts.head)
 			end
 			local x, _ = vim.regex(".$"):match_str(rightchars)
 			return { row = row, col = col + x }
@@ -215,7 +234,7 @@ function M._find_forward(opts)
 		if n > col then
 			if opts.head then
 				if i == #segments and not pos_next_ascii then
-					return M._find_forward_in_next_line(row, opts.head)
+					return M._find_forward_in_next_line(opts.buf, row, opts.head)
 				end
 				return { row = row, col = n }
 			else
