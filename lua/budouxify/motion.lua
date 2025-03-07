@@ -155,6 +155,12 @@ function M._find_forward(opts)
 			})
 		end
 		return { row = row, col = col + length - 1 }
+	elseif vim.regex("^[[:alnum:][:punct:]]\\+$"):match_str(rightchars) then
+		if opts.head then
+			return M._find_forward_in_next_line(opts.buf, row, opts.head)
+		else
+			return { row = row, col = #curline - 1 }
+		end
 	elseif vim.regex("^[[:alnum:][:punct:]]\\+."):match_str(rightchars) then
 		-- 直後に日本語
 		-- abc今日は

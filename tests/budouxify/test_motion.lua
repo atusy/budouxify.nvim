@@ -179,6 +179,12 @@ local parameters_list = {
 			"  ^Ｗ　Ｅ",
 			"abcあいう",
 		} },
+		{ {
+			"^ E",
+			"abc",
+			"def",
+			"W",
+		} },
 	},
 	["Cursor on non-ASCII WORD"] = {
 		{ {
