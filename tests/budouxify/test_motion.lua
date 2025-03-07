@@ -51,6 +51,7 @@ local parameters_list = {
 		},
 		{
 			{
+				"",
 				"  ^ ", -- cursor
 				"abc ",
 				"   |", -- jump
@@ -59,10 +60,151 @@ local parameters_list = {
 		-- at the end of last line
 		{
 			{
+				"",
 				"  ^", -- cursor
 				"abc",
 			},
 		},
+	},
+	["Cursor on [%s　]"] = {
+		-- single WORD
+		{ {
+			"^  W E",
+			"   aaa",
+		} },
+		{ {
+			" ^ W E",
+			"   aaa",
+		} },
+		{ {
+			"  ^W E",
+			"   aaa",
+		} },
+		{
+			{
+				"^ W E",
+				"		aaa", -- tab
+			},
+		},
+		{ {
+			"＾　W E",
+			"　　123",
+		} },
+		{ {
+			"^ 　W E",
+			"  　%%%",
+		} },
+		{ {
+			"  ＾W E",
+			"  　%%%",
+		} },
+		{ {
+			"＾  Ｗ　Ｅ",
+			"　  あいう",
+		} },
+		-- more WORDs
+		{ {
+			"^  W E",
+			"   a2% aaa",
+		} },
+		{ {
+			"＾　W E",
+			"　　1b% aaa",
+		} },
+		{ {
+			"^ 　W E",
+			"  　%2c aaa",
+		} },
+		{ {
+			"＾  Ｗ　Ｅ",
+			"　  あいう aaa",
+		} },
+		-- single ASCII WORD followed by Japanese character
+		{ {
+			"^  W E",
+			"   a2%あ",
+		} },
+		{ {
+			"＾　W E",
+			"　　1b%あ",
+		} },
+		{ {
+			"^ 　W E",
+			"  　%2cあ",
+		} },
+		-- A Japanese WORD followed by something
+		{ {
+			"＾  Ｗ　Ｅ",
+			"　  今日はGOOD",
+		} },
+		{ {
+			"  ＾Ｗ　Ｅ",
+			"  　今日は天気です。",
+		} },
+	},
+	["Cursor on [%w%p]"] = {
+		{ {
+			"^ E W",
+			"abc def",
+		} },
+		{ {
+			"  ^ W E",
+			"abc def",
+		} },
+		{ {
+			"^ E   W",
+			"abc   123",
+		} },
+		{ {
+			"  ^   W E",
+			"abc   123",
+		} },
+		{ {
+			"  ^　　W E",
+			"abc　　%%%",
+		} },
+		{ {
+			"^ E　  Ｗ",
+			"abc　  あいう",
+		} },
+		{ {
+			"  ^　  Ｗ　Ｅ",
+			"abc　  あいう",
+		} },
+		{ {
+			"^ EＷ",
+			"abcあいう",
+		} },
+		{ {
+			"  ^Ｗ　Ｅ",
+			"abcあいう",
+		} },
+	},
+	["Cursor on non-ASCII WORD"] = {
+		{ {
+			"＾　ＥW",
+			"今日はGOOD",
+		} },
+		{ {
+			"＾　Ｅ W",
+			"今日は GOOD",
+		} },
+		{ {
+			"＾　ＥＷ",
+			"今日は天気です。GOOD",
+		} },
+		{ {
+			"　　　＾　　　ＥW",
+			"今日は天気です。GOOD",
+		} },
+		{ {
+			"   　　　＾　　　ＥW",
+			"abc今日は天気です。GOOD",
+		} },
+		{ {
+			"　　＾W  E",
+			"今日はGOOD",
+		} },
 	},
 }
 
@@ -78,38 +220,56 @@ for name, parameters in pairs(parameters_list) do
 		T[name][motion] = function(parameter)
 			-- setup variables
 			local lines = {}
-			local pos_cursor = { 1, 0 }
-			local pos_expect = nil ---@type nil | { [1]: number, [2]: number }
+			local cursor = { 1, 0 }
+			local pos_expect = nil ---@type nil | { row: number, col: number }
 			for _, p in ipairs(parameter) do
 				if not vim.regex("[WＷEＥ|｜^＾]"):match_str(p) then
 					table.insert(lines, p)
 				else
 					local col_cursor = vim.regex("[\\^＾]"):match_str(p)
 					if col_cursor then
-						pos_cursor = { #lines + 1, col_cursor }
+						cursor = { #lines + 1, col_cursor }
 					end
 					local col_jump = vim.regex(cond.regex):match_str(p)
 					if col_jump then
 						if col_cursor then
-							pos_expect = { #lines + 1, col_jump }
+							pos_expect = { row = #lines + 1, col = col_jump }
 						else
-							pos_expect = { #lines, col_jump }
+							pos_expect = { row = #lines, col = col_jump }
 						end
 					end
 				end
+			end
+
+			-- early assertions
+			if #lines == 0 then
+				error("No lines found")
+			end
+
+			if #lines == 1 then
+				-- efficient tests without buffer
+				local pos_found = M.find_forward({
+					row = cursor[1],
+					col = cursor[2],
+					head = cond.head,
+					curline = lines[1],
+					error_handler = error,
+				})
+				MiniTest.expect.equality(pos_found, pos_expect)
+				return
 			end
 
 			-- setup buffer
 			local buf = vim.api.nvim_create_buf(false, true)
 			vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 			vim.api.nvim_win_set_buf(0, buf)
-			vim.api.nvim_win_set_cursor(0, pos_cursor)
+			vim.api.nvim_win_set_cursor(0, cursor)
 
 			-- test
 			local ok, pos_found = pcall(M.find_forward, {
 				buf = buf,
-				row = pos_cursor[1],
-				col = pos_cursor[2],
+				row = cursor[1],
+				col = cursor[2],
 				head = cond.head,
 				error_handler = error,
 			})
@@ -124,162 +284,13 @@ for name, parameters in pairs(parameters_list) do
 			if pos_expect == nil then
 				MiniTest.expect.equality(pos_found, nil)
 			else
-				MiniTest.expect.equality(pos_found, { row = pos_expect[1], col = pos_expect[2] })
+				MiniTest.expect.equality(pos_found, pos_expect)
 			end
 		end
 	end
 end
 
-T["Cursor on [%s　]"] = MiniTest.new_set({
-	parametrize = {
-		-- single WORD
-		{ {
-			curline = "   aaa",
-			cursors = "^  W E",
-		} },
-		{ {
-			curline = "   aaa",
-			cursors = " ^ W E",
-		} },
-		{ {
-			curline = "   aaa",
-			cursors = "  ^W E",
-		} },
-		{
-			{
-				curline = "		aaa", -- tab
-				cursors = "^ W E",
-			},
-		},
-		{ {
-			curline = "　　123",
-			cursors = "＾　W E",
-		} },
-		{ {
-			curline = "  　%%%",
-			cursors = "^ 　W E",
-		} },
-		{ {
-			curline = "  　%%%",
-			cursors = "  ＾W E",
-		} },
-		{ {
-			curline = "　  あいう",
-			cursors = "＾  Ｗ　Ｅ",
-		} },
-		-- more WORDs
-		{ {
-			curline = "   a2% aaa",
-			cursors = "^  W E",
-		} },
-		{ {
-			curline = "　　1b% aaa",
-			cursors = "＾　W E",
-		} },
-		{ {
-			curline = "  　%2c aaa",
-			cursors = "^ 　W E",
-		} },
-		{ {
-			curline = "　  あいう aaa",
-			cursors = "＾  Ｗ　Ｅ",
-		} },
-		-- single ASCII WORD followed by Japanese character
-		{ {
-			curline = "   a2%あ",
-			cursors = "^  W E",
-		} },
-		{ {
-			curline = "　　1b%あ",
-			cursors = "＾　W E",
-		} },
-		{ {
-			curline = "  　%2cあ",
-			cursors = "^ 　W E",
-		} },
-		-- A Japanese WORD followed by something
-		{ {
-			curline = "　  今日はGOOD",
-			cursors = "＾  Ｗ　Ｅ",
-		} },
-		{ {
-			curline = "  　今日は天気です。",
-			cursors = "  ＾Ｗ　Ｅ",
-		} },
-	},
-})
-
-T["Cursor on [%w%p]"] = MiniTest.new_set({
-	parametrize = {
-		{ {
-			curline = "abc def",
-			cursors = "^ E W",
-		} },
-		{ {
-			curline = "abc def",
-			cursors = "  ^ W E",
-		} },
-		{ {
-			curline = "abc   123",
-			cursors = "^ E   W",
-		} },
-		{ {
-			curline = "abc   123",
-			cursors = "  ^   W E",
-		} },
-		{ {
-			curline = "abc　　%%%",
-			cursors = "  ^　　W E",
-		} },
-		{ {
-			curline = "abc　  あいう",
-			cursors = "^ E　  Ｗ",
-		} },
-		{ {
-			curline = "abc　  あいう",
-			cursors = "  ^　  Ｗ　Ｅ",
-		} },
-		{ {
-			curline = "abcあいう",
-			cursors = "^ EＷ",
-		} },
-		{ {
-			curline = "abcあいう",
-			cursors = "  ^Ｗ　Ｅ",
-		} },
-	},
-})
-
-T["Cursor on non-ASCII WORD"] = MiniTest.new_set({
-	parametrize = {
-		{ {
-			curline = "今日はGOOD",
-			cursors = "＾　ＥW",
-		} },
-		{ {
-			curline = "今日は GOOD",
-			cursors = "＾　Ｅ W",
-		} },
-		{ {
-			curline = "今日は天気です。GOOD",
-			cursors = "＾　ＥＷ",
-		} },
-		{ {
-			curline = "今日は天気です。GOOD",
-			cursors = "　　　＾　　　ＥW",
-		} },
-		{ {
-			curline = "abc今日は天気です。GOOD",
-			cursors = "   　　　＾　　　ＥW",
-		} },
-		{ {
-			curline = "今日はGOOD",
-			cursors = "　　＾W  E",
-		} },
-	},
-})
-
-for _, case in pairs({ "Cursor on [%s　]", "Cursor on [%w%p]", "Cursor on non-ASCII WORD" }) do
+for _, case in pairs({}) do
 	for motion, cond in pairs({
 		W = { head = true, regex = "[WＷ]" },
 		E = { head = false, regex = "[EＥ]" },
