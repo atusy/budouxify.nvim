@@ -13,7 +13,7 @@ With lazy.nvim
     "https://github.com/atusy/budouxify.nvim"
     config = function()
       vim.keymap.set("n", "W", function()
-          local pos = M.find_forward({
+          local pos = require("budouxify.motion").find_forward({
               row = vim.api.nvim_win_get_cursor(0)[1],
               col = vim.api.nvim_win_get_cursor(0)[2],
               head = true,
@@ -23,7 +23,7 @@ With lazy.nvim
           end
       end)
       vim.keymap.set("n", "E", function()
-          local pos = M.find_forward({
+          local pos = require("budouxify.motion").find_forward({
               row = vim.api.nvim_win_get_cursor(0)[1],
               col = vim.api.nvim_win_get_cursor(0)[2],
               head = false,
