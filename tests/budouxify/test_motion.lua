@@ -211,6 +211,10 @@ local parameters_list = {
 			"　　＾W  E",
 			"今日はGOOD",
 		} },
+		{ {
+			"      ＾Ｗ　Ｅ",
+			"Neovimの設定はinit.lua",
+		} },
 	},
 }
 
