@@ -237,16 +237,15 @@ function M._find_forward(opts)
 	local n = #leftchars - #leftchars_utf8
 	for i, segment in pairs(segments) do
 		n = n + #segment
-		if n > col then
-			if opts.head then
-				if i == #segments and not pos_next_ascii then
-					return M._find_forward_in_next_line(opts.buf, row, opts.head)
-				end
-				return { row = row, col = n }
-			else
-				local x, y = vim.regex(".$"):match_str(string.sub(curline, 1, n))
-				return { row = row, col = n - y + x }
+		if opts.head and n > col then
+			if i == #segments and not pos_next_ascii then
+				return M._find_forward_in_next_line(opts.buf, row, opts.head)
 			end
+			return { row = row, col = n }
+		elseif n > col + 3 then
+			-- TODO: マジックナンバーきもちわるい
+			local x, y = vim.regex(".$"):match_str(string.sub(curline, 1, n))
+			return { row = row, col = n - y + x }
 		end
 	end
 
