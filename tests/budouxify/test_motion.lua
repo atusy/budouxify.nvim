@@ -429,6 +429,13 @@ local parameters_list_backward = {
 			"a1% de2",
 		} },
 	},
+	["B/gE: Cursor on non-ASCII WORD"] = {
+		-- cursor in the middle of the second segment
+		{ {
+			"　　ＧＢ　＾",
+			"今日は天気です。",
+		} },
+	},
 	["B/gE: Cursor on [%s　]"] = {
 		{ {
 			"B G^",

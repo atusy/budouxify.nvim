@@ -263,25 +263,35 @@ function M._find_forward(opts)
 end
 
 --- Parse a line into WORDs and return their boundaries as byte offsets.
+--- A WORD is a run of ASCII alphanumerics/punctuations or a budoux
+--- segment of a run of other non-space characters.
 ---@param line string
 ---@return { head: number, tail: number }[] # head: first char, tail: start of last char
 function M._parse_words(line)
+	---@type fun(string): string[]
+	local parse = require("budoux").load_japanese_model().parse
+
 	local words = {}
 	local i = 0
 	while i < #line do
 		local rest = string.sub(line, i + 1)
 		local _, spaces = vim.regex("^[[:space:]　]\\+"):match_str(rest)
+		local _, len = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rest)
 		if spaces then
 			i = i + spaces
+		elseif len then
+			local word = string.sub(rest, 1, len)
+			local x = vim.regex(".$"):match_str(word)
+			table.insert(words, { head = i, tail = i + x })
+			i = i + len
 		else
-			local _, len = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rest)
-			if len then
-				local word = string.sub(rest, 1, len)
-				local x = vim.regex(".$"):match_str(word)
+			-- 日本語などの非ASCII文字の連続をbudouxのセグメントに分割する
+			local run_end = vim.regex("[[:alnum:][:punct:][:space:]　]"):match_str(rest)
+			local run = run_end and string.sub(rest, 1, run_end) or rest
+			for _, segment in ipairs(parse(run)) do
+				local x = vim.regex(".$"):match_str(segment)
 				table.insert(words, { head = i, tail = i + x })
-				i = i + len
-			else
-				error("Unhandled character: '" .. string.sub(rest, 1, 1) .. "'")
+				i = i + #segment
 			end
 		end
 	end
