@@ -271,25 +271,30 @@ function M._parse_words(line)
 	---@type fun(string): string[]
 	local parse = require("budoux").load_japanese_model().parse
 
+	local regex_spaces = vim.regex("^[[:space:]　]\\+")
+	local regex_ascii_word = vim.regex("^[[:alnum:][:punct:]]\\+")
+	local regex_last_char = vim.regex(".$")
+	local regex_word_boundary = vim.regex("[[:alnum:][:punct:][:space:]　]")
+
 	local words = {}
 	local i = 0
 	while i < #line do
 		local rest = string.sub(line, i + 1)
-		local _, spaces = vim.regex("^[[:space:]　]\\+"):match_str(rest)
-		local _, len = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rest)
+		local _, spaces = regex_spaces:match_str(rest)
+		local _, len = regex_ascii_word:match_str(rest)
 		if spaces then
 			i = i + spaces
 		elseif len then
 			local word = string.sub(rest, 1, len)
-			local x = vim.regex(".$"):match_str(word)
+			local x = regex_last_char:match_str(word)
 			table.insert(words, { head = i, tail = i + x })
 			i = i + len
 		else
 			-- 日本語などの非ASCII文字の連続をbudouxのセグメントに分割する
-			local run_end = vim.regex("[[:alnum:][:punct:][:space:]　]"):match_str(rest)
+			local run_end = regex_word_boundary:match_str(rest)
 			local run = run_end and string.sub(rest, 1, run_end) or rest
 			for _, segment in ipairs(parse(run)) do
-				local x = vim.regex(".$"):match_str(segment)
+				local x = regex_last_char:match_str(segment)
 				table.insert(words, { head = i, tail = i + x })
 				i = i + #segment
 			end
