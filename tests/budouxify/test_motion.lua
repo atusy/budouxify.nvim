@@ -186,6 +186,25 @@ local parameters_list = {
 			"W",
 		} },
 	},
+	["Cursor on empty line"] = {
+		{
+			{
+				"^",
+				"",
+				"abc",
+				"W E",
+			},
+		},
+		{
+			{
+				"^",
+				"",
+				"",
+				"  abc",
+				"  W E",
+			},
+		},
+	},
 	["Cursor on non-ASCII WORD"] = {
 		{ {
 			"＾　ＥW",
@@ -215,6 +234,64 @@ local parameters_list = {
 			"      ＾Ｗ　Ｅ",
 			"Neovimの設定はinit.lua",
 		} },
+		-- A Japanese WORD followed by a space and another Japanese WORD
+		{ {
+			"＾　Ｅ Ｗ",
+			"今日は 明日も",
+		} },
+		-- Jump from a Japanese WORD to the next line
+		{
+			{
+				"＾　Ｅ",
+				"今日は",
+				"GOOD",
+				"W",
+			},
+		},
+		-- Cursor on the last char of a line
+		{
+			{
+				"　　＾",
+				"今日は",
+				"GOOD",
+				"W  E",
+			},
+		},
+		-- Cursor on the last segment of multiple segments
+		{
+			{
+				"　　　＾　　　Ｅ",
+				"今日は天気です。",
+				"GOOD",
+				"W",
+			},
+		},
+		-- No more WORDs in the buffer
+		{
+			{
+				"",
+				"＾　｜",
+				"今日は",
+			},
+		},
+	},
+	["Jump from ASCII to non-ASCII line"] = {
+		{
+			{
+				"^ E",
+				"abc",
+				"今日は",
+				"Ｗ",
+			},
+		},
+		{
+			{
+				"  ^",
+				"abc",
+				"今日は",
+				"Ｗ　Ｅ",
+			},
+		},
 	},
 }
 
@@ -300,23 +377,18 @@ for name, parameters in pairs(parameters_list) do
 	end
 end
 
-for _, case in pairs({}) do
-	for motion, cond in pairs({
-		W = { head = true, regex = "[WＷ]" },
-		E = { head = false, regex = "[EＥ]" },
-	}) do
-		T[case][motion] = function(params)
-			local from = vim.regex("[\\^＾]"):match_str(params.cursors)
-			local to = vim.regex(cond.regex):match_str(params.cursors)
-			local given = M.find_forward({
-				row = 1,
-				col = from,
-				curline = params.curline,
-				head = cond.head,
-			})
-			MiniTest.expect.equality(given, { row = 1, col = to })
-		end
-	end
+T["error handling"] = MiniTest.new_set()
+
+T["error handling"]["errors when only row is given"] = function()
+	MiniTest.expect.error(function()
+		M.find_forward({ row = 1, head = true, curline = "abc", error_handler = error })
+	end)
+end
+
+T["error handling"]["errors when only col is given"] = function()
+	MiniTest.expect.error(function()
+		M.find_forward({ col = 0, head = true, curline = "abc", error_handler = error })
+	end)
 end
 
 return T

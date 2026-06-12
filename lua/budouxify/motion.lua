@@ -91,7 +91,6 @@ function M._find_forward(opts)
 
 	-- 行末処理
 	if rightchars == "" or not vim.regex(".."):match_str(rightchars) then
-		--TODO: implement test
 		return M._find_forward_in_next_line(opts.buf, opts.row, opts.head)
 	end
 
@@ -101,7 +100,6 @@ function M._find_forward(opts)
 	local _, prefix_spaces = vim.regex("^[[:space:]　]\\+"):match_str(rightchars)
 	if prefix_spaces then
 		if string.find(rightchars, "^[%s　]+$") then
-			--TODO: implement test
 			return M._find_forward_in_next_line(opts.buf, row, opts.head)
 		end
 
