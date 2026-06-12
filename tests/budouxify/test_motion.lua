@@ -239,6 +239,21 @@ local parameters_list = {
 			"＾　Ｅ Ｗ",
 			"今日は 明日も",
 		} },
+		-- Cursor on the last Japanese char before a space
+		{ {
+			"　　＾ W  E",
+			"今日は GOOD",
+		} },
+		-- Cursor in the middle of a Japanese WORD followed by a space
+		{ {
+			"　＾Ｅ Ｗ",
+			"あいう えお",
+		} },
+		-- Cursor on the last char of a Japanese WORD followed by a Japanese WORD
+		{ {
+			"　　＾ ＷＥ",
+			"あいう えお",
+		} },
 		-- Jump from a Japanese WORD to the next line
 		{
 			{

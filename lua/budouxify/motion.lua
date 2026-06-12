@@ -24,7 +24,11 @@ function M._find_forward_in_next_line(buf, row, head)
 	-- 次の行の行頭に行く
 	-- * W: 行頭が空白文字以外
 	-- * E: 行頭が空白文字以外で次が空白文字
-	if not vim.regex("^[[:space:]　]"):match_str(line) and (head or line:find("^[^%s　][%s　]")) then
+	-- NOTE: Luaパターンはバイト単位で全角文字を正しく扱えないため、vim.regexを使う
+	if
+		not vim.regex("^[[:space:]　]"):match_str(line)
+		and (head or vim.regex("^[^[:space:]　][[:space:]　]"):match_str(line))
+	then
 		return { row = row + 1, col = 0 }
 	end
 
@@ -211,8 +215,10 @@ function M._find_forward(opts)
 				return { row = row, col = col + m - 1 }
 			end
 		elseif pos_next_space then
+			-- NOTE: match_str returns 0-based start and exclusive end,
+			-- so the byte length of the first char is i2 - i1
 			local i1, i2 = vim.regex("^."):match_str(rightchars)
-			if opts.head or (i2 - i1 + 1) == pos_next_space then
+			if opts.head or (i2 - i1) == pos_next_space then
 				return M._find_forward({
 					buf = opts.buf,
 					row = row,
@@ -221,8 +227,10 @@ function M._find_forward(opts)
 					head = opts.head,
 				})
 			end
+			-- segments[1] contains leftchars_utf8, so subtract its length
+			-- to convert the offset in the segment to the offset from col
 			local j1, _ = vim.regex(".$"):match_str(segments[1])
-			return { row = row, col = col + j1 }
+			return { row = row, col = col - #leftchars_utf8 + j1 }
 		else
 			if opts.head then
 				return M._find_forward_in_next_line(opts.buf, row, opts.head)
