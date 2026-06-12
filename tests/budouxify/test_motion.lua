@@ -413,6 +413,31 @@ local parameters_list_backward = {
 			"B ^",
 			"abc",
 		} },
+		-- cursor on the head of a WORD
+		{ {
+			"B G ^",
+			"abc def",
+		} },
+		-- cursor in the middle of the second WORD
+		{ {
+			"  G B^",
+			"abc def",
+		} },
+		-- punctuation and digits form WORDs
+		{ {
+			"  G B ^",
+			"a1% de2",
+		} },
+	},
+	["B/gE: Cursor on [%s　]"] = {
+		{ {
+			"B G^",
+			"abc def",
+		} },
+		{ {
+			"B G ＾",
+			"abc 　def",
+		} },
 	},
 }
 
