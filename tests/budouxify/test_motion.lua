@@ -407,6 +407,20 @@ register_cases(T, parameters_list, {
 	E = { head = false, regex = "[EＥ|｜]" },
 }, "[WＷEＥ|｜^＾]", M.find_forward)
 
+local parameters_list_backward = {
+	["B/gE: Cursor on ASCII WORD"] = {
+		{ {
+			"B ^",
+			"abc",
+		} },
+	},
+}
+
+register_cases(T, parameters_list_backward, {
+	B = { head = true, regex = "[BＢ|｜]" },
+	gE = { head = false, regex = "[GＧ|｜]" },
+}, "[BＢGＧ|｜^＾]", M.find_backward)
+
 T["error handling"] = MiniTest.new_set()
 
 T["error handling"]["errors when only row is given"] = function()

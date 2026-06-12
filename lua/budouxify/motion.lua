@@ -262,4 +262,74 @@ function M._find_forward(opts)
 	)
 end
 
+--- Parse a line into WORDs and return their boundaries as byte offsets.
+---@param line string
+---@return { head: number, tail: number }[] # head: first char, tail: start of last char
+function M._parse_words(line)
+	local words = {}
+	local i = 0
+	while i < #line do
+		local rest = string.sub(line, i + 1)
+		local _, spaces = vim.regex("^[[:space:]　]\\+"):match_str(rest)
+		if spaces then
+			i = i + spaces
+		else
+			local _, len = vim.regex("^[[:alnum:][:punct:]]\\+"):match_str(rest)
+			if len then
+				local word = string.sub(rest, 1, len)
+				local x = vim.regex(".$"):match_str(word)
+				table.insert(words, { head = i, tail = i + x })
+				i = i + len
+			else
+				error("Unhandled character: '" .. string.sub(rest, 1, 1) .. "'")
+			end
+		end
+	end
+	return words
+end
+
+---@param opts { row: number, col: number, curline: string, head: boolean, buf: number }
+---@return { row: number, col: number } | nil
+function M._find_backward(opts)
+	local key = opts.head and "head" or "tail"
+	local target = nil
+	for _, word in ipairs(M._parse_words(opts.curline)) do
+		if word[key] < opts.col then
+			target = word[key]
+		end
+	end
+	if target then
+		return { row = opts.row, col = target }
+	end
+	return nil
+end
+
+---@param opts { head: boolean, row: number?, col: number?, curline: string?, buf: number?, error_handler?: function }
+---@return { row: number, col: number } | nil
+function M.find_backward(opts)
+	local handle_error = opts.error_handler or function(err)
+		vim.notify(tostring(err), vim.log.levels.ERROR)
+	end
+	local ok, row, col = pcall(M._solve_cursor, opts.row, opts.col)
+	if not ok then
+		handle_error(tostring(row))
+		return nil
+	end
+	local buf = opts.buf or vim.api.nvim_get_current_buf()
+	local curline = opts.curline or vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1]
+
+	local ok2, pos = pcall(M._find_backward, {
+		row = row,
+		col = col,
+		curline = curline,
+		buf = buf,
+		head = opts.head,
+	})
+	if not ok2 then
+		handle_error(tostring(pos))
+		return nil
+	end
+	return pos
+end
+
 return M
