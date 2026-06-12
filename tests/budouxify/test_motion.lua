@@ -455,6 +455,54 @@ local parameters_list_backward = {
 			"今日はabc",
 		} },
 	},
+	["B/gE: Jump to the previous line"] = {
+		{
+			{
+				"abc",
+				"B G",
+				"^",
+				"def",
+			},
+		},
+		-- skip empty and whitespace-only lines
+		{
+			{
+				"abc",
+				"B G",
+				"",
+				"  ",
+				"　　 	",
+				"^",
+				"def",
+			},
+		},
+		-- the last WORD of the previous line is a Japanese segment
+		{
+			{
+				"今日は天気です。",
+				"　　　Ｂ　　　Ｇ",
+				"^",
+				"abc",
+			},
+		},
+		-- cursor on an empty line
+		{
+			{
+				"abc",
+				"B G",
+				"^",
+				"",
+				"def",
+			},
+		},
+		-- no WORD before the cursor in the buffer
+		{
+			{
+				"^",
+				"abc",
+			},
+		},
+	},
 	["B/gE: Cursor on [%s　]"] = {
 		{ {
 			"B G^",

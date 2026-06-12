@@ -298,6 +298,27 @@ function M._parse_words(line)
 	return words
 end
 
+---@param buf number
+---@param row number
+---@param head boolean
+---@return { row: number, col: number } | nil
+function M._find_backward_in_prev_line(buf, row, head)
+	-- 最初の行に達したら移動しない
+	if row <= 1 then
+		return nil
+	end
+
+	local line = vim.api.nvim_buf_get_lines(buf, row - 2, row - 1, true)[1]
+	local words = M._parse_words(line)
+	if #words == 0 then
+		return M._find_backward_in_prev_line(buf, row - 1, head)
+	end
+
+	-- 前の行の最後のWORDに行く
+	local word = words[#words]
+	return { row = row - 1, col = head and word.head or word.tail }
+end
+
 ---@param opts { row: number, col: number, curline: string, head: boolean, buf: number }
 ---@return { row: number, col: number } | nil
 function M._find_backward(opts)
@@ -311,7 +332,7 @@ function M._find_backward(opts)
 	if target then
 		return { row = opts.row, col = target }
 	end
-	return nil
+	return M._find_backward_in_prev_line(opts.buf, opts.row, opts.head)
 end
 
 ---@param opts { head: boolean, row: number?, col: number?, curline: string?, buf: number?, error_handler?: function }
