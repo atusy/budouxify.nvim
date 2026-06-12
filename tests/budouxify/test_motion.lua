@@ -435,6 +435,25 @@ local parameters_list_backward = {
 			"　　ＧＢ　＾",
 			"今日は天気です。",
 		} },
+		-- cursor on the head of the second segment
+		{ {
+			"Ｂ　Ｇ＾",
+			"今日は天気です。",
+		} },
+		-- cursor on the head of the first WORD: no jump
+		{ {
+			"＾",
+			"今日は天気です。",
+		} },
+		-- ASCII WORD adjacent to Japanese segments
+		{ {
+			"      　Ｂ　Ｇ^",
+			"Neovimの設定はinit.lua",
+		} },
+		{ {
+			"Ｂ　Ｇ＾",
+			"今日はabc",
+		} },
 	},
 	["B/gE: Cursor on [%s　]"] = {
 		{ {
@@ -464,6 +483,18 @@ end
 T["error handling"]["errors when only col is given"] = function()
 	MiniTest.expect.error(function()
 		M.find_forward({ col = 0, head = true, curline = "abc", error_handler = error })
+	end)
+end
+
+T["error handling"]["find_backward errors when only row is given"] = function()
+	MiniTest.expect.error(function()
+		M.find_backward({ row = 1, head = true, curline = "abc", error_handler = error })
+	end)
+end
+
+T["error handling"]["find_backward errors when only col is given"] = function()
+	MiniTest.expect.error(function()
+		M.find_backward({ col = 0, head = true, curline = "abc", error_handler = error })
 	end)
 end
 
