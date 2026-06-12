@@ -310,87 +310,102 @@ local parameters_list = {
 	},
 }
 
-for name, parameters in pairs(parameters_list) do
-	T[name] = MiniTest.new_set({
-		parametrize = parameters,
-	})
+--- Register parametrized test cases written in the visual DSL.
+---
+--- Each parameter is a list of strings. A string containing a marker
+--- (cursor or jump) annotates the buffer line next to it: a marker line
+--- with a cursor marker refers to the FOLLOWING line, and one without
+--- refers to the PRECEDING line. Other strings are buffer lines.
+---@param T table MiniTest set to register the cases to
+---@param parameters_list table<string, table> case name -> parameters
+---@param motions table<string, { head: boolean, regex: string }> motion name -> jump marker
+---@param marker_regex string regex to detect marker lines
+---@param find fun(opts: table): { row: number, col: number } | nil
+local function register_cases(T, parameters_list, motions, marker_regex, find)
+	for name, parameters in pairs(parameters_list) do
+		T[name] = MiniTest.new_set({
+			parametrize = parameters,
+		})
 
-	for motion, cond in pairs({
-		W = { head = true, regex = "[WＷ|｜]" },
-		E = { head = false, regex = "[EＥ|｜]" },
-	}) do
-		T[name][motion] = function(parameter)
-			-- setup variables
-			local lines = {}
-			local cursor = { 1, 0 }
-			local pos_expect = nil ---@type nil | { row: number, col: number }
-			for _, p in ipairs(parameter) do
-				if not vim.regex("[WＷEＥ|｜^＾]"):match_str(p) then
-					table.insert(lines, p)
-				else
-					local col_cursor = vim.regex("[\\^＾]"):match_str(p)
-					if col_cursor then
-						cursor = { #lines + 1, col_cursor }
-					end
-					local col_jump = vim.regex(cond.regex):match_str(p)
-					if col_jump then
+		for motion, cond in pairs(motions) do
+			T[name][motion] = function(parameter)
+				-- setup variables
+				local lines = {}
+				local cursor = { 1, 0 }
+				local pos_expect = nil ---@type nil | { row: number, col: number }
+				for _, p in ipairs(parameter) do
+					if not vim.regex(marker_regex):match_str(p) then
+						table.insert(lines, p)
+					else
+						local col_cursor = vim.regex("[\\^＾]"):match_str(p)
 						if col_cursor then
-							pos_expect = { row = #lines + 1, col = col_jump }
-						else
-							pos_expect = { row = #lines, col = col_jump }
+							cursor = { #lines + 1, col_cursor }
+						end
+						local col_jump = vim.regex(cond.regex):match_str(p)
+						if col_jump then
+							if col_cursor then
+								pos_expect = { row = #lines + 1, col = col_jump }
+							else
+								pos_expect = { row = #lines, col = col_jump }
+							end
 						end
 					end
 				end
-			end
 
-			-- early assertions
-			if #lines == 0 then
-				error("No lines found")
-			end
+				-- early assertions
+				if #lines == 0 then
+					error("No lines found")
+				end
 
-			if #lines == 1 then
-				-- efficient tests without buffer
-				local pos_found = M.find_forward({
+				if #lines == 1 then
+					-- efficient tests without buffer
+					local pos_found = find({
+						row = cursor[1],
+						col = cursor[2],
+						head = cond.head,
+						curline = lines[1],
+						error_handler = error,
+					})
+					MiniTest.expect.equality(pos_found, pos_expect)
+					return
+				end
+
+				-- setup buffer
+				local buf = vim.api.nvim_create_buf(false, true)
+				vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+				vim.api.nvim_win_set_buf(0, buf)
+				vim.api.nvim_win_set_cursor(0, cursor)
+
+				-- test
+				local ok, pos_found = pcall(find, {
+					buf = buf,
 					row = cursor[1],
 					col = cursor[2],
 					head = cond.head,
-					curline = lines[1],
 					error_handler = error,
 				})
-				MiniTest.expect.equality(pos_found, pos_expect)
-				return
-			end
 
-			-- setup buffer
-			local buf = vim.api.nvim_create_buf(false, true)
-			vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-			vim.api.nvim_win_set_buf(0, buf)
-			vim.api.nvim_win_set_cursor(0, cursor)
+				-- teardown buffer
+				vim.api.nvim_buf_delete(buf, { force = true })
 
-			-- test
-			local ok, pos_found = pcall(M.find_forward, {
-				buf = buf,
-				row = cursor[1],
-				col = cursor[2],
-				head = cond.head,
-				error_handler = error,
-			})
-
-			-- teardown buffer
-			vim.api.nvim_buf_delete(buf, { force = true })
-
-			-- assertion
-			if not ok then
-				error(pos_found)
-			end
-			if pos_expect == nil then
-				MiniTest.expect.equality(pos_found, nil)
-			else
-				MiniTest.expect.equality(pos_found, pos_expect)
+				-- assertion
+				if not ok then
+					error(pos_found)
+				end
+				if pos_expect == nil then
+					MiniTest.expect.equality(pos_found, nil)
+				else
+					MiniTest.expect.equality(pos_found, pos_expect)
+				end
 			end
 		end
 	end
 end
+
+register_cases(T, parameters_list, {
+	W = { head = true, regex = "[WＷ|｜]" },
+	E = { head = false, regex = "[EＥ|｜]" },
+}, "[WＷEＥ|｜^＾]", M.find_forward)
 
 T["error handling"] = MiniTest.new_set()
 
