@@ -6,24 +6,35 @@ local M = require("budouxify.textobject")
 
 --- Register parametrized test cases written in the visual DSL.
 ---
---- Each parameter is a list of two strings: a marker line and a buffer line.
+--- Each parameter is a marker line, a buffer line, and an optional count.
 --- The marker line annotates the buffer line with `^` (cursor), `[` (start
 --- of the expected range) and `]` (start of the last char of the expected
---- range). Full-width markers annotate full-width chars. A marker line
---- without `[`/`]` expects nil.
+--- range). Markers are matched by byte offset, so a marker over a full-width
+--- char must be its 3-byte variant (＾［］). A marker line without `[` and
+--- `]` expects nil.
 ---@param T table MiniTest set to register the cases to
 ---@param parameters_list table<string, table> case name -> parameters
 ---@param inner boolean
 local function register_cases(T, parameters_list, inner)
 	for name, parameters in pairs(parameters_list) do
 		T[name] = MiniTest.new_set({ parametrize = parameters })
-		T[name][inner and "iW" or "aW"] = function(marker, line)
+		T[name][inner and "iW" or "aW"] = function(marker, line, count)
 			local col_cursor = vim.regex("[\\^＾]"):match_str(marker)
 			local col_start = vim.regex("[\\[［]"):match_str(marker)
 			local col_finish = vim.regex("[\\]］]"):match_str(marker)
+			if (col_start == nil) ~= (col_finish == nil) then
+				error("marker line must have both or neither of [ and ]: " .. marker)
+			end
 			local expect = col_start and { start = { row = 1, col = col_start }, finish = { row = 1, col = col_finish } }
 				or nil
-			local found = M.find({ inner = inner, row = 1, col = col_cursor, curline = line, error_handler = error })
+			local found = M.find({
+				inner = inner,
+				count = count,
+				row = 1,
+				col = col_cursor,
+				curline = line,
+				error_handler = error,
+			})
 			MiniTest.expect.equality(found, expect)
 		end
 	end
@@ -43,6 +54,15 @@ register_cases(T, {
 	},
 	["iW: Cursor on empty line"] = {
 		{ "^", "" },
+	},
+	["iW: With count"] = {
+		-- WORDs and blank runs both count as objects
+		{ "[^ ]", "abc def ghi", 2 },
+		{ "[^    ]", "abc def ghi", 3 },
+		{ "   [^  ]", "abc  def", 2 },
+		{ "［＾　　　　　］", "今日は天気です。 GOOD", 2 },
+		-- stops at the end of the line
+		{ "[^        ]", "abc def ghi", 99 },
 	},
 	["iW: Cursor on non-ASCII WORD"] = {
 		{ "［＾］", "今日は" },
@@ -86,6 +106,17 @@ register_cases(T, {
 		{ "[^   ]", "   abc" },
 		-- trailing blanks: nothing follows
 		{ "   [^]", "abc   " },
+	},
+	["aW: With count"] = {
+		-- each WORD comes with its trailing blanks
+		{ "[^     ]", "abc def ghi", 2 },
+		-- the last WORD has no trailing blanks: fall back to leading blanks
+		{ "[^    ]", "abc def", 2 },
+		{ "[^     ]", " abc def", 2 },
+		-- from blanks: blanks then WORDs, without trailing blanks
+		{ "   [^      ]", "abc  def ghi", 2 },
+		-- stops at the end of the line
+		{ "[^        ]", "abc def ghi", 99 },
 	},
 }, false)
 
@@ -145,6 +176,11 @@ end
 
 T["select"]["viW in visual mode reselects the WORD"] = function()
 	MiniTest.expect.equality(apply({ "abc def ghi" }, { 1, 5 }, "vhiWd"), { "abc  ghi" })
+end
+
+T["select"]["honors a count"] = function()
+	MiniTest.expect.equality(apply({ "abc def ghi" }, { 1, 0 }, "d2aW"), { "ghi" })
+	MiniTest.expect.equality(apply({ "abc def ghi" }, { 1, 0 }, "v2iWd"), { "def ghi" })
 end
 
 T["select"]["honors selection=exclusive"] = function()
