@@ -16,19 +16,24 @@ function M.find(opts)
 	local buf = opts.buf or vim.api.nvim_get_current_buf()
 	local curline = opts.curline or vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1]
 
-	local words = motion._parse_words(curline)
-	for i, word in ipairs(words) do
+	if curline == "" then
+		return nil
+	end
+
+	-- 空白上のiWは、WORDの間の空白の連続を選択する
+	local prev, next = nil, nil
+	for _, word in ipairs(motion._parse_words(curline)) do
 		if word.head <= col and col <= word.tail then
 			return { start = { row = row, col = word.head }, finish = { row = row, col = word.tail } }
-		end
-		-- 空白上のiWは、WORDの間の空白の連続を選択する
-		if col < word.head then
-			local prev = words[i - 1]
-			local start = prev and M._next_char(curline, prev.tail) or 0
-			return { start = { row = row, col = start }, finish = { row = row, col = M._prev_char(curline, word.head) } }
+		elseif word.tail < col then
+			prev = word
+		elseif not next then
+			next = word
 		end
 	end
-	return nil
+	local start = prev and M._next_char(curline, prev.tail) or 0
+	local finish = next and M._prev_char(curline, next.head) or M._prev_char(curline, #curline)
+	return { start = { row = row, col = start }, finish = { row = row, col = finish } }
 end
 
 --- Byte offset of the char following the one at `col`.

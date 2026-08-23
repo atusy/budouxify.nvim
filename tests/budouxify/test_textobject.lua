@@ -46,6 +46,10 @@ register_cases(T, {
 		{ "   [^]", "abc   def" },
 		{ "   [ ^]", "abc    def" },
 		{ "   [＾]", "abc 　	def" },
+		-- leading and trailing blanks
+		{ "[^]", "   abc" },
+		{ "   [ ^ ]", "abc     " },
+		{ "[^]", "   " },
 	},
 }, true)
 
