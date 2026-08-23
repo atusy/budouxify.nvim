@@ -35,6 +35,14 @@ register_cases(T, {
 		{ "[^]", "abc  def" },
 		{ "     [^]", "abc  def" },
 		{ "    [^]", "abc a1%" },
+		-- cursor on the last char
+		{ "[ ^]", "abcd" },
+		-- cursor virtually past the end of the line (visual mode with `$`, virtualedit)
+		{ "[ ]^", "abc" },
+		{ "    [ ]^", "abc def" },
+	},
+	["iW: Cursor on empty line"] = {
+		{ "^", "" },
 	},
 	["iW: Cursor on non-ASCII WORD"] = {
 		{ "［＾］", "今日は" },
@@ -69,6 +77,8 @@ register_cases(T, {
 		{ "[^]", "abc" },
 		{ "　　　［＾　　］", "今日は天気です。" },
 		{ "[^]", "abc今日は" },
+		-- cursor virtually past the end of the line
+		{ "   [  ]^", "abc def" },
 	},
 	["aW: Cursor on [%s　]"] = {
 		{ "   [^   ]", "abc   def" },
@@ -85,6 +95,14 @@ T["error handling"]["errors when only row is given"] = function()
 	MiniTest.expect.error(function()
 		M.find({ row = 1, inner = true, curline = "abc", error_handler = error })
 	end)
+end
+
+T["error handling"]["returns nil when row is outside the buffer"] = function()
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "abc" })
+	local found = M.find({ buf = buf, row = 5, col = 0, inner = true, error_handler = error })
+	vim.api.nvim_buf_delete(buf, { force = true })
+	MiniTest.expect.equality(found, nil)
 end
 
 T["error handling"]["errors when only col is given"] = function()

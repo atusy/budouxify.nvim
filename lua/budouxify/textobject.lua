@@ -35,10 +35,12 @@ end
 ---@param opts { row: number, col: number, curline: string, inner: boolean }
 ---@return { start: { row: number, col: number }, finish: { row: number, col: number } } | nil
 function M._find(opts)
-	local row, col, line = opts.row, opts.col, opts.curline
-	if line == "" then
+	local row, line = opts.row, opts.curline
+	if not line or line == "" then
 		return nil
 	end
+	-- 行末より右の仮想カーソル(v$やvirtualedit)は最後の文字として扱う
+	local col = math.min(opts.col, M._prev_char(line, #line))
 
 	local words = motion._parse_words(line)
 	-- 最初の、カーソル以降に終わるWORD
