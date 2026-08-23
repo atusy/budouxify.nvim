@@ -79,4 +79,58 @@ register_cases(T, {
 	},
 }, false)
 
+T["error handling"] = MiniTest.new_set()
+
+T["error handling"]["errors when only row is given"] = function()
+	MiniTest.expect.error(function()
+		M.find({ row = 1, inner = true, curline = "abc", error_handler = error })
+	end)
+end
+
+T["error handling"]["errors when only col is given"] = function()
+	MiniTest.expect.error(function()
+		M.find({ col = 0, inner = true, curline = "abc", error_handler = error })
+	end)
+end
+
+--- Apply `keys` (with mappings) on a buffer and return the resulting lines.
+---@param lines string[]
+---@param cursor { [1]: number, [2]: number }
+---@param keys string
+---@return string[]
+local function apply(lines, cursor, keys)
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.api.nvim_win_set_buf(0, buf)
+	vim.api.nvim_win_set_cursor(0, cursor)
+	vim.keymap.set({ "x", "o" }, "iW", function()
+		M.select({ inner = true })
+	end, { buffer = buf })
+	vim.keymap.set({ "x", "o" }, "aW", function()
+		M.select({ inner = false })
+	end, { buffer = buf })
+	vim.cmd("normal " .. keys)
+	local result = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+	vim.api.nvim_buf_delete(buf, { force = true })
+	return result
+end
+
+T["select"] = MiniTest.new_set()
+
+T["select"]["diW deletes the budoux segment under the cursor"] = function()
+	MiniTest.expect.equality(apply({ "今日は天気です。" }, { 1, 12 }, "diW"), { "今日は" })
+end
+
+T["select"]["daW deletes the WORD and the trailing blanks"] = function()
+	MiniTest.expect.equality(apply({ "abc   def" }, { 1, 1 }, "daW"), { "def" })
+end
+
+T["select"]["viW in visual mode reselects the WORD"] = function()
+	MiniTest.expect.equality(apply({ "abc def ghi" }, { 1, 5 }, "vhiWd"), { "abc  ghi" })
+end
+
+T["select"]["operator on an empty line is a no-op"] = function()
+	MiniTest.expect.equality(apply({ "", "abc" }, { 1, 0 }, "diW"), { "", "abc" })
+end
+
 return T

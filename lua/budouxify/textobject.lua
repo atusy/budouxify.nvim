@@ -97,4 +97,20 @@ function M.find(opts)
 	return range
 end
 
+--- Visually select the range for use in operator-pending and visual mode mappings.
+---@param opts { inner: boolean, error_handler?: function }
+function M.select(opts)
+	local range = M.find(opts)
+	if not range then
+		return
+	end
+	-- ビジュアルモードなら一旦抜けてから選択し直す
+	if vim.fn.mode():match("^[vV\22]") then
+		vim.cmd("normal! \27")
+	end
+	vim.api.nvim_win_set_cursor(0, { range.start.row, range.start.col })
+	vim.cmd("normal! v")
+	vim.api.nvim_win_set_cursor(0, { range.finish.row, range.finish.col })
+end
+
 return M
