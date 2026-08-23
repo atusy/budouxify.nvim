@@ -29,9 +29,15 @@ function M.find(opts)
 				return { start = { row = row, col = word.head }, finish = { row = row, col = word.tail } }
 			end
 			-- aWはWORDと後続の空白を選択する
+			-- 後続の空白がなければ、代わりに先行する空白を含める
 			local after = words[i + 1]
 			local finish = after and M._prev_char(curline, after.head) or word.tail
-			return { start = { row = row, col = word.head }, finish = { row = row, col = finish } }
+			local start = word.head
+			if finish == word.tail then
+				local before = words[i - 1]
+				start = before and M._next_char(curline, before.tail) or 0
+			end
+			return { start = { row = row, col = start }, finish = { row = row, col = finish } }
 		elseif word.tail < col then
 			prev = word
 		elseif not next then
@@ -40,6 +46,10 @@ function M.find(opts)
 	end
 	local start = prev and M._next_char(curline, prev.tail) or 0
 	local finish = next and M._prev_char(curline, next.head) or M._prev_char(curline, #curline)
+	-- 空白上のaWは、空白と後続のWORDを選択する
+	if not opts.inner and next then
+		finish = next.tail
+	end
 	return { start = { row = row, col = start }, finish = { row = row, col = finish } }
 end
 
