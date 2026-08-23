@@ -293,7 +293,12 @@ function M._parse_words(line)
 			-- 日本語などの非ASCII文字の連続をbudouxのセグメントに分割する
 			local run_end = regex_word_boundary:match_str(rest)
 			local run = run_end and string.sub(rest, 1, run_end) or rest
-			for _, segment in ipairs(parse(run)) do
+			-- budouxは不正なUTF-8に対して空を返すので、runごと1つのWORDとして扱い無限ループを防ぐ
+			local segments = parse(run)
+			if #segments == 0 then
+				segments = { run }
+			end
+			for _, segment in ipairs(segments) do
 				local x = regex_last_char:match_str(segment)
 				table.insert(words, { head = i, tail = i + x })
 				i = i + #segment

@@ -520,6 +520,17 @@ register_cases(T, parameters_list_backward, {
 	gE = { head = false, regex = "[GＧ|｜]" },
 }, "[BＢGＧ|｜^＾]", M.find_backward)
 
+T["_parse_words"] = MiniTest.new_set()
+
+T["_parse_words"]["treats invalid UTF-8 as a WORD instead of hanging"] = function()
+	MiniTest.expect.equality(M._parse_words("\128"), { { head = 0, tail = 0 } })
+	MiniTest.expect.equality(M._parse_words("a \128\129 b"), {
+		{ head = 0, tail = 0 },
+		{ head = 2, tail = 3 },
+		{ head = 5, tail = 5 },
+	})
+end
+
 T["error handling"] = MiniTest.new_set()
 
 T["error handling"]["errors when only row is given"] = function()
