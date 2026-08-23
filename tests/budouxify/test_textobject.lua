@@ -58,6 +58,8 @@ register_cases(T, {
 		{ "[^   ]", "abc   def" },
 		{ "［＾　 ］", "今日は 　天気です。" },
 		{ "         ［＾　］", "Neovimの設定は init.lua" },
+		-- trailing blanks of the last WORD
+		{ "[^   ]", "abc   " },
 	},
 	["aW: Cursor on WORD without trailing blanks"] = {
 		-- leading blanks are included instead

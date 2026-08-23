@@ -31,7 +31,7 @@ function M.find(opts)
 			-- aWはWORDと後続の空白を選択する
 			-- 後続の空白がなければ、代わりに先行する空白を含める
 			local after = words[i + 1]
-			local finish = after and M._prev_char(curline, after.head) or word.tail
+			local finish = after and M._prev_char(curline, after.head) or M._prev_char(curline, #curline)
 			local start = word.head
 			if finish == word.tail then
 				local before = words[i - 1]
