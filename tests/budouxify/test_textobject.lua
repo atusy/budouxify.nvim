@@ -147,6 +147,18 @@ T["select"]["viW in visual mode reselects the WORD"] = function()
 	MiniTest.expect.equality(apply({ "abc def ghi" }, { 1, 5 }, "vhiWd"), { "abc  ghi" })
 end
 
+T["select"]["honors selection=exclusive"] = function()
+	vim.o.selection = "exclusive"
+	local ok, err = pcall(function()
+		MiniTest.expect.equality(apply({ "abc def ghi" }, { 1, 5 }, "diW"), { "abc  ghi" })
+		MiniTest.expect.equality(apply({ "今日は天気です。" }, { 1, 12 }, "daW"), { "今日は" })
+	end)
+	vim.o.selection = "inclusive"
+	if not ok then
+		error(err)
+	end
+end
+
 T["select"]["operator on an empty line is a no-op"] = function()
 	MiniTest.expect.equality(apply({ "", "abc" }, { 1, 0 }, "diW"), { "", "abc" })
 end

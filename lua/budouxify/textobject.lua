@@ -112,7 +112,13 @@ function M.select(opts)
 	end
 	vim.api.nvim_win_set_cursor(0, { range.start.row, range.start.col })
 	vim.cmd("normal! v")
-	vim.api.nvim_win_set_cursor(0, { range.finish.row, range.finish.col })
+	local finish = range.finish.col
+	-- 'selection'がexclusiveだとカーソル位置の文字が選択に含まれないので、1文字先に置く
+	if vim.o.selection == "exclusive" then
+		local line = vim.api.nvim_buf_get_lines(0, range.finish.row - 1, range.finish.row, true)[1]
+		finish = M._next_char(line, finish)
+	end
+	vim.api.nvim_win_set_cursor(0, { range.finish.row, finish })
 end
 
 return M
