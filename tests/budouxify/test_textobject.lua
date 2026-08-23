@@ -53,4 +53,12 @@ register_cases(T, {
 	},
 }, true)
 
+register_cases(T, {
+	["aW: Cursor on WORD followed by blanks"] = {
+		{ "[^   ]", "abc   def" },
+		{ "［＾　 ］", "今日は 　天気です。" },
+		{ "         ［＾　］", "Neovimの設定は init.lua" },
+	},
+}, false)
+
 return T

@@ -22,9 +22,16 @@ function M.find(opts)
 
 	-- 空白上のiWは、WORDの間の空白の連続を選択する
 	local prev, next = nil, nil
-	for _, word in ipairs(motion._parse_words(curline)) do
+	local words = motion._parse_words(curline)
+	for i, word in ipairs(words) do
 		if word.head <= col and col <= word.tail then
-			return { start = { row = row, col = word.head }, finish = { row = row, col = word.tail } }
+			if opts.inner then
+				return { start = { row = row, col = word.head }, finish = { row = row, col = word.tail } }
+			end
+			-- aWはWORDと後続の空白を選択する
+			local after = words[i + 1]
+			local finish = after and M._prev_char(curline, after.head) or word.tail
+			return { start = { row = row, col = word.head }, finish = { row = row, col = finish } }
 		elseif word.tail < col then
 			prev = word
 		elseif not next then
