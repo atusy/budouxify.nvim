@@ -58,16 +58,20 @@ With lazy.nvim
 
 ## Text objects
 
-`iW` and `aW` follow Vim's built-in ones, but a WORD in Japanese text is a
-[budoux](https://github.com/google/budoux) segment, so `diW` on
+`iW` and `aW` are modelled on Vim's built-in ones, but a WORD in Japanese
+text is a [budoux](https://github.com/google/budoux) segment, so `diW` on
 `今日は天気です。` with the cursor on `天` deletes `天気です。`.
 
 - `iW` selects the WORD under the cursor, or the run of blanks when the
   cursor is on a blank.
 - `aW` also selects the trailing blanks (or the leading ones when there are
-  none), and on a blank selects the blanks together with the following WORD.
+  none), and on a blank selects the blanks together with the following WORD
+  (or just the blanks when nothing follows on the line).
+- A count selects that many objects, e.g. `d2aW`.
 
-Both work within the current line. `require("budouxify.textobject").find({
-inner = true })` returns the range as `{ start = { row, col }, finish = { row,
-col } }` (byte offsets, both ends inclusive) if you want to build your own
-mapping.
+Differences from Vim: both stay within the current line, and in Visual mode
+they reselect the object under the cursor instead of extending the area.
+
+`require("budouxify.textobject").find({ inner = true })` returns the range as
+`{ start = { row, col }, finish = { row, col } }` (byte offsets, both ends
+inclusive), or `nil` on an empty line, if you want to build your own mapping.
