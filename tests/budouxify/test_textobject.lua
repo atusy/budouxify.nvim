@@ -32,6 +32,20 @@ end
 register_cases(T, {
 	["iW: Cursor on ASCII WORD"] = {
 		{ "[^]", "abc" },
+		{ "[^]", "abc  def" },
+		{ "     [^]", "abc  def" },
+		{ "    [^]", "abc a1%" },
+	},
+	["iW: Cursor on non-ASCII WORD"] = {
+		{ "［＾］", "今日は" },
+		{ "［＾］", "今日は天気です。" },
+		{ "　　　［＾　　］", "今日は天気です。" },
+		{ "         ［＾］", "Neovimの設定はinit.lua" },
+	},
+	["iW: Cursor on [%s　]"] = {
+		{ "   [^]", "abc   def" },
+		{ "   [ ^]", "abc    def" },
+		{ "   [＾]", "abc 　	def" },
 	},
 }, true)
 
