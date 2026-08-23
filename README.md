@@ -10,7 +10,7 @@ With lazy.nvim
 {
   {"https://github.com/atusy/budoux.lua"},
   {
-    "https://github.com/atusy/budouxify.nvim"
+    "https://github.com/atusy/budouxify.nvim",
     config = function()
       vim.keymap.set("n", "W", function()
           local pos = require("budouxify.motion").find_forward({
