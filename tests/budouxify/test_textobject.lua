@@ -1,0 +1,38 @@
+local MiniTest = require("mini.test")
+
+local T = MiniTest.new_set()
+
+local M = require("budouxify.textobject")
+
+--- Register parametrized test cases written in the visual DSL.
+---
+--- Each parameter is a list of two strings: a marker line and a buffer line.
+--- The marker line annotates the buffer line with `^` (cursor), `[` (start
+--- of the expected range) and `]` (start of the last char of the expected
+--- range). Full-width markers annotate full-width chars. A marker line
+--- without `[`/`]` expects nil.
+---@param T table MiniTest set to register the cases to
+---@param parameters_list table<string, table> case name -> parameters
+---@param inner boolean
+local function register_cases(T, parameters_list, inner)
+	for name, parameters in pairs(parameters_list) do
+		T[name] = MiniTest.new_set({ parametrize = parameters })
+		T[name][inner and "iW" or "aW"] = function(marker, line)
+			local col_cursor = vim.regex("[\\^＾]"):match_str(marker)
+			local col_start = vim.regex("[\\[［]"):match_str(marker)
+			local col_finish = vim.regex("[\\]］]"):match_str(marker)
+			local expect = col_start and { start = { row = 1, col = col_start }, finish = { row = 1, col = col_finish } }
+				or nil
+			local found = M.find({ inner = inner, row = 1, col = col_cursor, curline = line, error_handler = error })
+			MiniTest.expect.equality(found, expect)
+		end
+	end
+end
+
+register_cases(T, {
+	["iW: Cursor on ASCII WORD"] = {
+		{ "[^]", "abc" },
+	},
+}, true)
+
+return T
