@@ -25,21 +25,26 @@ local function is_utf8_continuation(byte)
 end
 
 --- Length in bytes of the UTF-8 char led by `byte`, or nil for a
---- continuation byte or an invalid lead (C0/C1 are overlong, F5+ would
---- encode beyond U+10FFFF).
+--- continuation byte or FE/FF. Mirrors Neovim's structural utf8len_tab
+--- (including the legacy 5- and 6-byte forms), so boundaries land where
+--- the editor's own cursor stepping does.
 ---@param byte number
 ---@return number | nil
 local function utf8_length(byte)
 	if byte < 0x80 then
 		return 1
-	elseif byte < 0xC2 then
+	elseif byte < 0xC0 then
 		return nil
 	elseif byte < 0xE0 then
 		return 2
 	elseif byte < 0xF0 then
 		return 3
-	elseif byte < 0xF5 then
+	elseif byte < 0xF8 then
 		return 4
+	elseif byte < 0xFC then
+		return 5
+	elseif byte < 0xFE then
+		return 6
 	end
 	return nil
 end
@@ -72,7 +77,7 @@ end
 ---@return number
 function M.prev_char(line, col)
 	local i = col - 1
-	while i > 0 and col - i < 4 and is_utf8_continuation(string.byte(line, i + 1)) do
+	while i > 0 and col - i < 6 and is_utf8_continuation(string.byte(line, i + 1)) do
 		i = i - 1
 	end
 	if utf8_length(string.byte(line, i + 1) or 0) == col - i then

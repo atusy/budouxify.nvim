@@ -548,6 +548,21 @@ T["parse_words"]["Unicode blanks like NBSP and U+2003 separate WORDs"] = functio
 	})
 end
 
+T["parse_words"]["structural sequences step as one char, like Neovim"] = function()
+	-- C1 BF and F5 80 80 80 are illegal codepoints but structurally
+	-- complete, so their WORD tail is the lead byte, where gE lands
+	MiniTest.expect.equality(words.parse_words("x \193\191 y"), {
+		{ head = 0, tail = 0 },
+		{ head = 2, tail = 2 },
+		{ head = 5, tail = 5 },
+	})
+	MiniTest.expect.equality(words.parse_words("x \245\128\128\128 y"), {
+		{ head = 0, tail = 0 },
+		{ head = 2, tail = 2 },
+		{ head = 7, tail = 7 },
+	})
+end
+
 T["B/gE: Unicode blank"] = MiniTest.new_set()
 
 T["B/gE: Unicode blank"]["crosses U+1680 to the previous WORD"] = function()

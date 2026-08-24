@@ -147,8 +147,9 @@ T["single-char WORD"]["iW treats a NUL byte as part of the WORD"] = function()
 end
 
 T["single-char WORD"]["iW contains a cursor on an overlong-encoding byte"] = function()
+	-- C0 80 steps as one structural 2-byte char, like Neovim's cursor
 	local found = M.find({ inner = true, row = 1, col = 3, curline = "x \192\128 y", error_handler = error })
-	MiniTest.expect.equality(found, { start = { row = 1, col = 2 }, finish = { row = 1, col = 3 } })
+	MiniTest.expect.equality(found, { start = { row = 1, col = 2 }, finish = { row = 1, col = 2 } })
 end
 
 T["single-char WORD"]["iW contains a cursor inside the last char of a WORD"] = function()
