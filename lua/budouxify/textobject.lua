@@ -141,7 +141,8 @@ function M.select(opts)
 	end
 	-- ビジュアルモードなら一旦抜けてから選択し直す
 	if vim.fn.mode():match("^[vV\22]") then
-		vim.cmd("normal! " .. vim.keycode("<Esc>"))
+		-- vim.keycodeはNeovim 0.10以降なのでnvim_replace_termcodesを使う
+		vim.cmd("normal! " .. vim.api.nvim_replace_termcodes("<Esc>", true, false, true))
 	end
 	vim.api.nvim_win_set_cursor(0, { range.start.row, range.start.col })
 	vim.cmd("normal! v")
