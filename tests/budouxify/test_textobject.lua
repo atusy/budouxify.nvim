@@ -256,6 +256,10 @@ T["select"]["diW respects a U+3000 boundary inside Japanese text"] = function()
 	MiniTest.expect.equality(apply({ "あ　い" }, { 1, 0 }, "diW"), { "　い" })
 end
 
+T["select"]["daW treats NBSP as the trailing blank"] = function()
+	MiniTest.expect.equality(apply({ "a\u{00a0}b" }, { 1, 0 }, "daW"), { "b" })
+end
+
 T["select"]["diW deletes the whole WORD around a NUL byte"] = function()
 	MiniTest.expect.equality(apply({ "x a\0b y" }, { 1, 3 }, "diW"), { "x  y" })
 end

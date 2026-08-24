@@ -79,15 +79,30 @@ function M.prev_char(line, col)
 	return col - 1
 end
 
+-- Vimがword/WORDモーションで空白(class 0)とみなす非ASCII文字
+-- (VimソースのutfClassTableより: NBSP、U+2000-200B、LS/PS、NNBSP、MMSP、全角空白)
+local mb_blank_chars = (function()
+	local codepoints = { 0x00a0, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000 }
+	for cp = 0x2000, 0x200b do
+		table.insert(codepoints, cp)
+	end
+	local chars = ""
+	for _, cp in ipairs(codepoints) do
+		chars = chars .. vim.fn.nr2char(cp, 1)
+	end
+	return chars
+end)()
+local regex_blanks = vim.regex("^[ \t" .. mb_blank_chars .. "]\\+")
+local regex_mb_blank = vim.regex("[" .. mb_blank_chars .. "]")
+
 --- Parse a line into WORDs and return their boundaries as byte offsets.
 --- A WORD is a run of ASCII chars other than space and tab (as in Vim,
 --- control chars and NUL count as WORD chars) or a budoux segment of a
---- run of non-ASCII chars. Blanks are space, tab, and U+3000.
+--- run of non-ASCII chars. Blanks are space, tab, and the non-ASCII
+--- chars Vim classifies as white (NBSP, U+2000-200B, U+3000, ...).
 ---@param line string
 ---@return { head: number, tail: number }[] # head: first char, tail: start of last char
 function M.parse_words(line)
-	local regex_blanks = vim.regex("^[ \t　]\\+")
-
 	local words = {}
 	local i = 0
 	while i < #line do
@@ -102,12 +117,12 @@ function M.parse_words(line)
 			i = i + #ascii_word
 		else
 			-- 非ASCII文字の連続をbudouxのセグメントに分割する
-			-- UTF-8の非ASCII文字は全バイトが0x80以上なので、バイト検索で連続の終わりを探せる
-			-- 全角空白(U+3000)も区切り。そのバイト列E3 80 80は正しいUTF-8の文字境界を跨がない
+			-- ASCIIバイト(NUL含む)はバイト検索で、非ASCIIの空白はvim.regexで連続の終わりを探す
+			-- (vim.regexはNULから先が見えないが、バイト検索が先にNULで止まるので安全)
 			local run_end = string.find(rest, "[%z\1-\127]")
-			local ideographic_space = string.find(rest, "　", 1, true)
-			if ideographic_space and (not run_end or ideographic_space < run_end) then
-				run_end = ideographic_space
+			local mb_blank = regex_mb_blank:match_str(rest)
+			if mb_blank and (not run_end or mb_blank + 1 < run_end) then
+				run_end = mb_blank + 1
 			end
 			local run = run_end and string.sub(rest, 1, run_end - 1) or rest
 			-- budouxは不正なUTF-8に対して空を返すので、runごと1つのWORDとして扱い無限ループを防ぐ

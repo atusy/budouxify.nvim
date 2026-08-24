@@ -533,6 +533,17 @@ T["parse_words"]["U+3000 separates Japanese WORDs"] = function()
 	})
 end
 
+T["parse_words"]["Unicode blanks like NBSP and U+2003 separate WORDs"] = function()
+	MiniTest.expect.equality(words.parse_words("a\u{00a0}b"), {
+		{ head = 0, tail = 0 },
+		{ head = 3, tail = 3 },
+	})
+	MiniTest.expect.equality(words.parse_words("a\u{2003}b"), {
+		{ head = 0, tail = 0 },
+		{ head = 4, tail = 4 },
+	})
+end
+
 T["parse_words"]["treats NUL and control chars as WORD chars"] = function()
 	MiniTest.expect.equality(words.parse_words("a\0b"), { { head = 0, tail = 2 } })
 	MiniTest.expect.equality(words.parse_words("a\rb"), { { head = 0, tail = 2 } })
