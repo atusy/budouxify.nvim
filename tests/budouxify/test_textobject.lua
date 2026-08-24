@@ -311,4 +311,9 @@ T["select"]["operator on an empty line is a no-op"] = function()
 	MiniTest.expect.equality(apply({ "", "abc" }, { 1, 0 }, "diW"), { "", "abc" })
 end
 
+T["select"]["a no-op cancels the pending operator"] = function()
+	-- without cancellation, the trailing j would complete the delete
+	MiniTest.expect.equality(apply({ "", "abc" }, { 1, 0 }, "diWj"), { "", "abc" })
+end
+
 return T
