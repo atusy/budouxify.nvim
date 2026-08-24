@@ -25,19 +25,20 @@ local function is_utf8_continuation(byte)
 end
 
 --- Length in bytes of the UTF-8 char led by `byte`, or nil for a
---- continuation byte or an invalid lead.
+--- continuation byte or an invalid lead (C0/C1 are overlong, F5+ would
+--- encode beyond U+10FFFF).
 ---@param byte number
 ---@return number | nil
 local function utf8_length(byte)
 	if byte < 0x80 then
 		return 1
-	elseif byte < 0xC0 then
+	elseif byte < 0xC2 then
 		return nil
 	elseif byte < 0xE0 then
 		return 2
 	elseif byte < 0xF0 then
 		return 3
-	elseif byte < 0xF8 then
+	elseif byte < 0xF5 then
 		return 4
 	end
 	return nil

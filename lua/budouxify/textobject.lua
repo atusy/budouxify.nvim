@@ -47,9 +47,11 @@ function M._find(opts)
 	local col = math.min(opts.col, words.prev_char(line, #line))
 	local count = opts.count or 1
 
+	-- objectsは行を隙間なく敷き詰めるので、colを含むのは次のobjectが始まる前の最後のもの
+	-- (finishは最終文字の開始バイトなので、多バイト文字の途中のcolと比較できない)
 	local objects = M._objects(line)
 	local first = 1
-	while objects[first].finish < col do
+	while objects[first + 1] and objects[first + 1].start <= col do
 		first = first + 1
 	end
 

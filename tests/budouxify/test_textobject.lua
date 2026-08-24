@@ -146,6 +146,17 @@ T["single-char WORD"]["iW treats a NUL byte as part of the WORD"] = function()
 	MiniTest.expect.equality(found2, found)
 end
 
+T["single-char WORD"]["iW contains a cursor on an overlong-encoding byte"] = function()
+	local found = M.find({ inner = true, row = 1, col = 3, curline = "x \192\128 y", error_handler = error })
+	MiniTest.expect.equality(found, { start = { row = 1, col = 2 }, finish = { row = 1, col = 3 } })
+end
+
+T["single-char WORD"]["iW contains a cursor inside the last char of a WORD"] = function()
+	-- col 7 is a continuation byte of は
+	local found = M.find({ inner = true, row = 1, col = 7, curline = "今日は abc", error_handler = error })
+	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 6 } })
+end
+
 T["single-char WORD"]["iW stops at U+3000 without adjacent ASCII"] = function()
 	local found = M.find({ inner = true, row = 1, col = 0, curline = "あ　い", error_handler = error })
 	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 0 } })
@@ -251,6 +262,8 @@ end
 
 T["select"]["diW deletes an invalid UTF-8 WORD entirely"] = function()
 	MiniTest.expect.equality(apply({ "x \128\129 y" }, { 1, 2 }, "diW"), { "x  y" })
+	-- overlong encoding: each byte is its own char, cursor on the second
+	MiniTest.expect.equality(apply({ "x \192\128 y" }, { 1, 3 }, "diW"), { "x  y" })
 end
 
 T["select"]["operator on an empty line is a no-op"] = function()
