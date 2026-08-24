@@ -526,7 +526,7 @@ T["parse_words"] = MiniTest.new_set()
 
 -- vim.regex cannot see past a NUL byte, so the run from the NUL to the end
 -- of the line becomes one WORD; the guarantee is "no error", not precision.
--- Note that real buffer lines represent NUL as "\n", which is a blank.
+-- Reachable from real buffers: nvim_buf_get_lines returns NUL bytes as-is.
 T["parse_words"]["treats NUL bytes as a WORD instead of erroring"] = function()
 	MiniTest.expect.equality(words.parse_words("a\0b"), {
 		{ head = 0, tail = 0 },

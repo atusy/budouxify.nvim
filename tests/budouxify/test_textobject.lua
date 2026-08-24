@@ -133,10 +133,18 @@ T["single-char WORD"]["iW selects just the char"] = function()
 end
 
 -- vim.regex cannot see past a NUL byte, so the range is approximate; the
--- guarantee is "no error". Real buffer lines represent NUL as "\n" instead.
+-- guarantee is "no error". Reachable from real buffers: nvim_buf_get_lines
+-- returns NUL bytes as-is.
 T["single-char WORD"]["iW on a line with a NUL byte does not error"] = function()
 	local found = M.find({ inner = true, row = 1, col = 1, curline = "a\0b", error_handler = error })
 	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 0 } })
+
+	-- through an actual buffer, without supplying curline
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "a\0b" })
+	local found2 = M.find({ buf = buf, row = 1, col = 1, inner = true, error_handler = error })
+	vim.api.nvim_buf_delete(buf, { force = true })
+	MiniTest.expect.equality(found2, found)
 end
 
 T["single-char WORD"]["iW selects a single-char budoux segment"] = function()
