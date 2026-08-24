@@ -94,6 +94,8 @@ register_cases(T, {
 		-- leading blanks are included instead
 		{ "   [  ^ ]", "abc   def" },
 		{ "         [   ＾　　　］", "今日は 　天気です。" },
+		-- line-leading indentation is not absorbed (matches Vim)
+		{ "   [^]", "   abc" },
 		-- no blanks around: only the WORD
 		{ "[^]", "abc" },
 		{ "　　　［＾　　］", "今日は天気です。" },
@@ -113,7 +115,7 @@ register_cases(T, {
 		{ "[^     ]", "abc def ghi", 2 },
 		-- the last WORD has no trailing blanks: fall back to leading blanks
 		{ "[^    ]", "abc def", 2 },
-		{ "[^     ]", " abc def", 2 },
+		{ " [^    ]", " abc def", 2 },
 		-- from blanks: blanks then WORDs, without trailing blanks
 		{ "   [^      ]", "abc  def ghi", 2 },
 		-- stops at the end of the line
@@ -195,6 +197,10 @@ end
 
 T["select"]["daW deletes the WORD and the trailing blanks"] = function()
 	MiniTest.expect.equality(apply({ "abc   def" }, { 1, 1 }, "daW"), { "def" })
+end
+
+T["select"]["daW keeps line-leading indentation"] = function()
+	MiniTest.expect.equality(apply({ "   abc" }, { 1, 3 }, "daW"), { "   " })
 end
 
 T["select"]["viW in visual mode reselects the WORD"] = function()

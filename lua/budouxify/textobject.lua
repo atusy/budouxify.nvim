@@ -97,11 +97,12 @@ function M._find(opts)
 			end
 		end
 		-- WORDから始めたときは後続の空白も含め、なければ代わりに先行する空白を含める
+		-- ただし行頭のインデントはVimと同様に含めない
 		if objects[first].word then
 			local after, before = objects[last + 1], objects[first - 1]
 			if after and not after.word then
 				last = last + 1
-			elseif before and not before.word then
+			elseif before and not before.word and objects[first - 2] then
 				start = before.start
 			end
 		end
