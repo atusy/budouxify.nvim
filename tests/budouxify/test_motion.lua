@@ -526,6 +526,13 @@ T["parse_words"] = MiniTest.new_set()
 
 -- NUL and control chars are non-blank, so they are WORD chars like in Vim.
 -- Reachable from real buffers: nvim_buf_get_lines returns NUL bytes as-is.
+T["parse_words"]["U+3000 separates Japanese WORDs"] = function()
+	MiniTest.expect.equality(words.parse_words("あ　い"), {
+		{ head = 0, tail = 0 },
+		{ head = 6, tail = 6 },
+	})
+end
+
 T["parse_words"]["treats NUL and control chars as WORD chars"] = function()
 	MiniTest.expect.equality(words.parse_words("a\0b"), { { head = 0, tail = 2 } })
 	MiniTest.expect.equality(words.parse_words("a\rb"), { { head = 0, tail = 2 } })

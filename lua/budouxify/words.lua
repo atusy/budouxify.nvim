@@ -75,7 +75,12 @@ function M.parse_words(line)
 		else
 			-- 非ASCII文字の連続をbudouxのセグメントに分割する
 			-- UTF-8の非ASCII文字は全バイトが0x80以上なので、バイト検索で連続の終わりを探せる
+			-- 全角空白(U+3000)も区切り。そのバイト列E3 80 80は正しいUTF-8の文字境界を跨がない
 			local run_end = string.find(rest, "[%z\1-\127]")
+			local ideographic_space = string.find(rest, "　", 1, true)
+			if ideographic_space and (not run_end or ideographic_space < run_end) then
+				run_end = ideographic_space
+			end
 			local run = run_end and string.sub(rest, 1, run_end - 1) or rest
 			-- budouxは不正なUTF-8に対して空を返すので、runごと1つのWORDとして扱い無限ループを防ぐ
 			local segments = M.parse_japanese(run)

@@ -146,6 +146,11 @@ T["single-char WORD"]["iW treats a NUL byte as part of the WORD"] = function()
 	MiniTest.expect.equality(found2, found)
 end
 
+T["single-char WORD"]["iW stops at U+3000 without adjacent ASCII"] = function()
+	local found = M.find({ inner = true, row = 1, col = 0, curline = "あ　い", error_handler = error })
+	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 0 } })
+end
+
 T["single-char WORD"]["iW selects a single-char budoux segment"] = function()
 	-- "Neovimの設定はinit.lua" segments as Neovim / の / 設定は / init.lua
 	local found = M.find({ inner = true, row = 1, col = 6, curline = "Neovimの設定はinit.lua", error_handler = error })
@@ -234,6 +239,10 @@ T["select"]["honors selection=exclusive"] = function()
 	if not ok then
 		error(err)
 	end
+end
+
+T["select"]["diW respects a U+3000 boundary inside Japanese text"] = function()
+	MiniTest.expect.equality(apply({ "あ　い" }, { 1, 0 }, "diW"), { "　い" })
 end
 
 T["select"]["diW deletes the whole WORD around a NUL byte"] = function()
