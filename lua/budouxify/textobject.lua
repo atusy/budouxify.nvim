@@ -1,6 +1,7 @@
 local M = {}
 
 local motion = require("budouxify.motion")
+local words = require("budouxify.words")
 
 local regex_first_char = vim.regex("^.")
 local regex_last_char = vim.regex(".$")
@@ -52,7 +53,7 @@ function M._objects(line)
 		end
 	end
 	local prev = nil
-	for _, word in ipairs(motion._parse_words(line)) do
+	for _, word in ipairs(words.parse_words(line)) do
 		add_blanks(prev, word)
 		table.insert(objects, { start = word.head, finish = word.tail, word = true })
 		prev = word

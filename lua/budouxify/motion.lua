@@ -1,14 +1,6 @@
 local M = {}
 
---- budoux.luaはモデルの読み込みを毎回やり直すので、パーサを1度だけ作って使い回す
----@type fun(sentence: string): string[]
-local parse_japanese = nil
-local function get_parser()
-	if not parse_japanese then
-		parse_japanese = require("budoux").load_japanese_model().parse
-	end
-	return parse_japanese
-end
+local words = require("budouxify.words")
 
 ---@param buf number
 ---@param row number
@@ -98,7 +90,7 @@ end
 ---@param opts { row: number, col: number, curline: string, head: boolean, buf: number }
 ---@return { row: number, col: number } | nil
 function M._find_forward(opts)
-	local parse = get_parser()
+	local parse = words.parse_japanese
 
 	local row, col, curline = opts.row, opts.col, opts.curline
 	local rightchars = string.sub(curline, col + 1) -- including the current char
@@ -272,51 +264,6 @@ function M._find_forward(opts)
 	)
 end
 
---- Parse a line into WORDs and return their boundaries as byte offsets.
---- A WORD is a run of ASCII alphanumerics/punctuations or a budoux
---- segment of a run of other non-space characters.
----@param line string
----@return { head: number, tail: number }[] # head: first char, tail: start of last char
-function M._parse_words(line)
-	local parse = get_parser()
-
-	local regex_spaces = vim.regex("^[[:space:]　]\\+")
-	local regex_ascii_word = vim.regex("^[[:alnum:][:punct:]]\\+")
-	local regex_last_char = vim.regex(".$")
-	local regex_word_boundary = vim.regex("[[:alnum:][:punct:][:space:]　]")
-
-	local words = {}
-	local i = 0
-	while i < #line do
-		local rest = string.sub(line, i + 1)
-		local _, spaces = regex_spaces:match_str(rest)
-		local _, len = regex_ascii_word:match_str(rest)
-		if spaces then
-			i = i + spaces
-		elseif len then
-			local word = string.sub(rest, 1, len)
-			local x = regex_last_char:match_str(word)
-			table.insert(words, { head = i, tail = i + x })
-			i = i + len
-		else
-			-- 日本語などの非ASCII文字の連続をbudouxのセグメントに分割する
-			local run_end = regex_word_boundary:match_str(rest)
-			local run = run_end and string.sub(rest, 1, run_end) or rest
-			-- budouxは不正なUTF-8に対して空を返すので、runごと1つのWORDとして扱い無限ループを防ぐ
-			local segments = parse(run)
-			if #segments == 0 then
-				segments = { run }
-			end
-			for _, segment in ipairs(segments) do
-				local x = regex_last_char:match_str(segment)
-				table.insert(words, { head = i, tail = i + x })
-				i = i + #segment
-			end
-		end
-	end
-	return words
-end
-
 ---@param buf number
 ---@param row number
 ---@param head boolean
@@ -328,13 +275,13 @@ function M._find_backward_in_prev_line(buf, row, head)
 	end
 
 	local line = vim.api.nvim_buf_get_lines(buf, row - 2, row - 1, true)[1]
-	local words = M._parse_words(line)
-	if #words == 0 then
+	local ws = words.parse_words(line)
+	if #ws == 0 then
 		return M._find_backward_in_prev_line(buf, row - 1, head)
 	end
 
 	-- 前の行の最後のWORDに行く
-	local word = words[#words]
+	local word = ws[#ws]
 	return { row = row - 1, col = head and word.head or word.tail }
 end
 
@@ -343,7 +290,7 @@ end
 function M._find_backward(opts)
 	local key = opts.head and "head" or "tail"
 	local target = nil
-	for _, word in ipairs(M._parse_words(opts.curline)) do
+	for _, word in ipairs(words.parse_words(opts.curline)) do
 		if word[key] < opts.col then
 			target = word[key]
 		end
