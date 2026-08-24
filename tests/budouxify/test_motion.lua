@@ -524,6 +524,16 @@ local words = require("budouxify.words")
 
 T["parse_words"] = MiniTest.new_set()
 
+-- vim.regex cannot see past a NUL byte, so the run from the NUL to the end
+-- of the line becomes one WORD; the guarantee is "no error", not precision.
+-- Note that real buffer lines represent NUL as "\n", which is a blank.
+T["parse_words"]["treats NUL bytes as a WORD instead of erroring"] = function()
+	MiniTest.expect.equality(words.parse_words("a\0b"), {
+		{ head = 0, tail = 0 },
+		{ head = 1, tail = 2 },
+	})
+end
+
 T["parse_words"]["treats invalid UTF-8 as a WORD instead of hanging"] = function()
 	MiniTest.expect.equality(words.parse_words("\128"), { { head = 0, tail = 0 } })
 	MiniTest.expect.equality(words.parse_words("a \128\129 b"), {

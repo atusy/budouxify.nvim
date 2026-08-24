@@ -130,6 +130,13 @@ T["single-char WORD"]["iW selects just the char"] = function()
 	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 0 } })
 end
 
+-- vim.regex cannot see past a NUL byte, so the range is approximate; the
+-- guarantee is "no error". Real buffer lines represent NUL as "\n" instead.
+T["single-char WORD"]["iW on a line with a NUL byte does not error"] = function()
+	local found = M.find({ inner = true, row = 1, col = 1, curline = "a\0b", error_handler = error })
+	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 0 } })
+end
+
 T["single-char WORD"]["iW selects a single-char budoux segment"] = function()
 	-- "Neovimの設定はinit.lua" segments as Neovim / の / 設定は / init.lua
 	local found = M.find({ inner = true, row = 1, col = 6, curline = "Neovimの設定はinit.lua", error_handler = error })

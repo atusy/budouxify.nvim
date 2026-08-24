@@ -52,7 +52,8 @@ function M.parse_words(line)
 				segments = { run }
 			end
 			for _, segment in ipairs(segments) do
-				local x = regex_last_char:match_str(segment)
+				-- NUL文字などにはvim.regexがマッチしないので、1バイト文字として数える
+				local x = regex_last_char:match_str(segment) or #segment - 1
 				table.insert(words, { head = i, tail = i + x })
 				i = i + #segment
 			end

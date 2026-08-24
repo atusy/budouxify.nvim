@@ -11,8 +11,9 @@ local regex_last_char = vim.regex(".$")
 ---@param col number
 ---@return number
 function M._next_char(line, col)
+	-- NUL文字などにはvim.regexがマッチしないので、1バイト文字として数える
 	local _, len = regex_first_char:match_str(string.sub(line, col + 1))
-	return col + len
+	return col + (len or 1)
 end
 
 --- Byte offset of the char preceding the one at `col`.
@@ -21,7 +22,7 @@ end
 ---@return number
 function M._prev_char(line, col)
 	local x = regex_last_char:match_str(string.sub(line, 1, col))
-	return x
+	return x or col - 1
 end
 
 --- Range of the blanks between two WORDs, where either may be nil
