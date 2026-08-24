@@ -520,12 +520,95 @@ register_cases(T, parameters_list_backward, {
 	gE = { head = false, regex = "[GＧ|｜]" },
 }, "[BＢGＧ|｜^＾]", M.find_backward)
 
+local words = require("budouxify.words")
+
+T["parse_words"] = MiniTest.new_set()
+
+-- NUL and control chars are non-blank, so they are WORD chars like in Vim.
+-- Reachable from real buffers: nvim_buf_get_lines returns NUL bytes as-is.
+T["parse_words"]["U+3000 separates Japanese WORDs"] = function()
+	MiniTest.expect.equality(words.parse_words("あ　い"), {
+		{ head = 0, tail = 0 },
+		{ head = 6, tail = 6 },
+	})
+end
+
+T["parse_words"]["Unicode blanks like NBSP and U+2003 separate WORDs"] = function()
+	MiniTest.expect.equality(words.parse_words("a\u{00a0}b"), {
+		{ head = 0, tail = 0 },
+		{ head = 3, tail = 3 },
+	})
+	MiniTest.expect.equality(words.parse_words("a\u{2003}b"), {
+		{ head = 0, tail = 0 },
+		{ head = 4, tail = 4 },
+	})
+	MiniTest.expect.equality(words.parse_words("a\u{1680}b"), {
+		{ head = 0, tail = 0 },
+		{ head = 4, tail = 4 },
+	})
+end
+
+T["parse_words"]["structural sequences step as one char, like Neovim"] = function()
+	-- C1 BF and F5 80 80 80 are illegal codepoints but structurally
+	-- complete, so their WORD tail is the lead byte, where gE lands
+	MiniTest.expect.equality(words.parse_words("x \193\191 y"), {
+		{ head = 0, tail = 0 },
+		{ head = 2, tail = 2 },
+		{ head = 5, tail = 5 },
+	})
+	MiniTest.expect.equality(words.parse_words("x \245\128\128\128 y"), {
+		{ head = 0, tail = 0 },
+		{ head = 2, tail = 2 },
+		{ head = 7, tail = 7 },
+	})
+end
+
+T["B/gE: Unicode blank"] = MiniTest.new_set()
+
+T["B/gE: Unicode blank"]["crosses U+1680 to the previous WORD"] = function()
+	for _, head in ipairs({ true, false }) do
+		local pos = M.find_backward({ row = 1, col = 4, curline = "a\u{1680}b", head = head, error_handler = error })
+		MiniTest.expect.equality(pos, { row = 1, col = 0 })
+	end
+end
+
+T["parse_words"]["treats NUL and control chars as WORD chars"] = function()
+	MiniTest.expect.equality(words.parse_words("a\0b"), { { head = 0, tail = 2 } })
+	MiniTest.expect.equality(words.parse_words("a\rb"), { { head = 0, tail = 2 } })
+	MiniTest.expect.equality(words.parse_words("a\vb\fc"), { { head = 0, tail = 4 } })
+	MiniTest.expect.equality(words.parse_words("a\nb"), { { head = 0, tail = 2 } })
+end
+
+T["parse_words"]["treats invalid UTF-8 as a WORD instead of hanging"] = function()
+	MiniTest.expect.equality(words.parse_words("\128"), { { head = 0, tail = 0 } })
+	-- each invalid byte is its own char, so the tail is the last byte
+	MiniTest.expect.equality(words.parse_words("a \128\129 b"), {
+		{ head = 0, tail = 0 },
+		{ head = 2, tail = 3 },
+		{ head = 5, tail = 5 },
+	})
+end
+
 T["error handling"] = MiniTest.new_set()
 
 T["error handling"]["errors when only row is given"] = function()
 	MiniTest.expect.error(function()
 		M.find_forward({ row = 1, head = true, curline = "abc", error_handler = error })
 	end)
+end
+
+T["error handling"]["find_forward returns nil after reporting a cursor error"] = function()
+	local reported = nil
+	local ok, pos = pcall(M.find_forward, {
+		row = 1,
+		head = true,
+		error_handler = function(err)
+			reported = err
+		end,
+	})
+	MiniTest.expect.equality(ok, true)
+	MiniTest.expect.equality(pos, nil)
+	MiniTest.expect.no_equality(reported, nil)
 end
 
 T["error handling"]["errors when only col is given"] = function()
