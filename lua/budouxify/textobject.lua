@@ -2,12 +2,15 @@ local M = {}
 
 local motion = require("budouxify.motion")
 
+local regex_first_char = vim.regex("^.")
+local regex_last_char = vim.regex(".$")
+
 --- Byte offset of the char following the one at `col`.
 ---@param line string
 ---@param col number
 ---@return number
 function M._next_char(line, col)
-	local _, len = vim.regex("^."):match_str(string.sub(line, col + 1))
+	local _, len = regex_first_char:match_str(string.sub(line, col + 1))
 	return col + len
 end
 
@@ -16,7 +19,7 @@ end
 ---@param col number
 ---@return number
 function M._prev_char(line, col)
-	local x = vim.regex(".$"):match_str(string.sub(line, 1, col))
+	local x = regex_last_char:match_str(string.sub(line, 1, col))
 	return x
 end
 
@@ -136,7 +139,7 @@ function M.select(opts)
 	end
 	-- ビジュアルモードなら一旦抜けてから選択し直す
 	if vim.fn.mode():match("^[vV\22]") then
-		vim.cmd("normal! \27")
+		vim.cmd("normal! " .. vim.keycode("<Esc>"))
 	end
 	vim.api.nvim_win_set_cursor(0, { range.start.row, range.start.col })
 	vim.cmd("normal! v")
