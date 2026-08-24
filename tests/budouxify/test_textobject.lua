@@ -182,7 +182,7 @@ end
 
 T["error handling"]["normalizes an invalid count to 1"] = function()
 	local expect = M.find({ inner = true, row = 1, col = 0, curline = "abc def", error_handler = error })
-	for _, count in ipairs({ 0, -1, 0.5 }) do
+	for _, count in ipairs({ 0, -1, 0.5, 2.5, 0 / 0, math.huge, "2" }) do
 		local found = M.find({
 			inner = true,
 			count = count,

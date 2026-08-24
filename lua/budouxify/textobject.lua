@@ -45,8 +45,11 @@ function M._find(opts)
 	end
 	-- 行末より右の仮想カーソル(v$やvirtualedit)は最後の文字として扱う
 	local col = math.min(opts.col, words.prev_char(line, #line))
-	-- countの不正値(0、負、小数)は1に正規化する
-	local count = math.max(1, math.floor(opts.count or 1))
+	-- countは正の有限な整数のみ受け付け、それ以外(0、負、小数、NaN、無限大)は1として扱う
+	local count = opts.count
+	if type(count) ~= "number" or count % 1 ~= 0 or count < 1 then
+		count = 1
+	end
 
 	-- objectsは行を隙間なく敷き詰めるので、colを含むのは次のobjectが始まる前の最後のもの
 	-- (finishは最終文字の開始バイトなので、多バイト文字の途中のcolと比較できない)
