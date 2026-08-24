@@ -258,6 +258,7 @@ end
 
 T["select"]["daW treats NBSP as the trailing blank"] = function()
 	MiniTest.expect.equality(apply({ "a\u{00a0}b" }, { 1, 0 }, "daW"), { "b" })
+	MiniTest.expect.equality(apply({ "a\u{1680}b" }, { 1, 0 }, "daW"), { "b" })
 end
 
 T["select"]["diW deletes the whole WORD around a NUL byte"] = function()

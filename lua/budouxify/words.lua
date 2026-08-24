@@ -80,9 +80,9 @@ function M.prev_char(line, col)
 end
 
 -- Vimがword/WORDモーションで空白(class 0)とみなす非ASCII文字
--- (VimソースのutfClassTableより: NBSP、U+2000-200B、LS/PS、NNBSP、MMSP、全角空白)
+-- (VimソースのutfClassTableより: NBSP、オガム空白、U+2000-200B、LS/PS、NNBSP、MMSP、全角空白)
 local mb_blank_chars = (function()
-	local codepoints = { 0x00a0, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000 }
+	local codepoints = { 0x00a0, 0x1680, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000 }
 	for cp = 0x2000, 0x200b do
 		table.insert(codepoints, cp)
 	end

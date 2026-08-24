@@ -542,6 +542,19 @@ T["parse_words"]["Unicode blanks like NBSP and U+2003 separate WORDs"] = functio
 		{ head = 0, tail = 0 },
 		{ head = 4, tail = 4 },
 	})
+	MiniTest.expect.equality(words.parse_words("a\u{1680}b"), {
+		{ head = 0, tail = 0 },
+		{ head = 4, tail = 4 },
+	})
+end
+
+T["B/gE: Unicode blank"] = MiniTest.new_set()
+
+T["B/gE: Unicode blank"]["crosses U+1680 to the previous WORD"] = function()
+	for _, head in ipairs({ true, false }) do
+		local pos = M.find_backward({ row = 1, col = 4, curline = "a\u{1680}b", head = head, error_handler = error })
+		MiniTest.expect.equality(pos, { row = 1, col = 0 })
+	end
 end
 
 T["parse_words"]["treats NUL and control chars as WORD chars"] = function()
