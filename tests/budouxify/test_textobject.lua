@@ -84,6 +84,7 @@ register_cases(T, {
 register_cases(T, {
 	["aW: Cursor on WORD followed by blanks"] = {
 		{ "[^   ]", "abc   def" },
+		{ "[^ ]", "abc	def" },
 		{ "［＾　 ］", "今日は 　天気です。" },
 		{ "         ［＾　］", "Neovimの設定は init.lua" },
 		-- trailing blanks of the last WORD
@@ -119,6 +120,21 @@ register_cases(T, {
 		{ "[^        ]", "abc def ghi", 99 },
 	},
 }, false)
+
+-- A single-char WORD cannot be written in the DSL: its cursor, start, and
+-- finish markers would all share one byte.
+T["single-char WORD"] = MiniTest.new_set()
+
+T["single-char WORD"]["iW selects just the char"] = function()
+	local found = M.find({ inner = true, row = 1, col = 0, curline = "a b", error_handler = error })
+	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 0 } })
+end
+
+T["single-char WORD"]["iW selects a single-char budoux segment"] = function()
+	-- "Neovimの設定はinit.lua" segments as Neovim / の / 設定は / init.lua
+	local found = M.find({ inner = true, row = 1, col = 6, curline = "Neovimの設定はinit.lua", error_handler = error })
+	MiniTest.expect.equality(found, { start = { row = 1, col = 6 }, finish = { row = 1, col = 6 } })
+end
 
 T["error handling"] = MiniTest.new_set()
 
@@ -176,6 +192,11 @@ end
 
 T["select"]["viW in visual mode reselects the WORD"] = function()
 	MiniTest.expect.equality(apply({ "abc def ghi" }, { 1, 5 }, "vhiWd"), { "abc  ghi" })
+end
+
+T["select"]["V and CTRL-V collapse to a charwise selection"] = function()
+	MiniTest.expect.equality(apply({ "abc def ghi" }, { 1, 5 }, "ViWd"), { "abc  ghi" })
+	MiniTest.expect.equality(apply({ "abc def ghi" }, { 1, 5 }, "\22iWd"), { "abc  ghi" })
 end
 
 T["select"]["honors a count"] = function()
