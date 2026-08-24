@@ -249,6 +249,10 @@ T["select"]["diW deletes the whole WORD around a NUL byte"] = function()
 	MiniTest.expect.equality(apply({ "x a\0b y" }, { 1, 3 }, "diW"), { "x  y" })
 end
 
+T["select"]["diW deletes an invalid UTF-8 WORD entirely"] = function()
+	MiniTest.expect.equality(apply({ "x \128\129 y" }, { 1, 2 }, "diW"), { "x  y" })
+end
+
 T["select"]["operator on an empty line is a no-op"] = function()
 	MiniTest.expect.equality(apply({ "", "abc" }, { 1, 0 }, "diW"), { "", "abc" })
 end

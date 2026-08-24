@@ -24,31 +24,58 @@ local function is_utf8_continuation(byte)
 	return byte >= 0x80 and byte < 0xC0
 end
 
+--- Length in bytes of the UTF-8 char led by `byte`, or nil for a
+--- continuation byte or an invalid lead.
+---@param byte number
+---@return number | nil
+local function utf8_length(byte)
+	if byte < 0x80 then
+		return 1
+	elseif byte < 0xC0 then
+		return nil
+	elseif byte < 0xE0 then
+		return 2
+	elseif byte < 0xF0 then
+		return 3
+	elseif byte < 0xF8 then
+		return 4
+	end
+	return nil
+end
+
 --- Byte offset of the char following the one at `col`.
---- Byte-based so that NUL and invalid UTF-8 are stepped over safely.
+--- Byte-based so that NUL is stepped over safely; each byte of invalid
+--- UTF-8 counts as its own char.
 ---@param line string
 ---@param col number
 ---@return number
 function M.next_char(line, col)
-	local i = col + 1
-	while i < #line and is_utf8_continuation(string.byte(line, i + 1)) do
-		i = i + 1
+	local len = utf8_length(string.byte(line, col + 1) or 0) or 1
+	for i = col + 2, col + len do
+		if i > #line or not is_utf8_continuation(string.byte(line, i)) then
+			len = 1
+			break
+		end
 	end
-	return i
+	return col + len
 end
 
 --- Byte offset of the last char of `string.sub(line, 1, col)`,
 --- i.e. of the char preceding the one at `col`. -1 if there is none.
---- Byte-based so that NUL and invalid UTF-8 are stepped over safely.
+--- Byte-based so that NUL is stepped over safely; each byte of invalid
+--- UTF-8 counts as its own char.
 ---@param line string
 ---@param col number
 ---@return number
 function M.prev_char(line, col)
 	local i = col - 1
-	while i > 0 and is_utf8_continuation(string.byte(line, i + 1)) do
+	while i > 0 and col - i < 4 and is_utf8_continuation(string.byte(line, i + 1)) do
 		i = i - 1
 	end
-	return i
+	if utf8_length(string.byte(line, i + 1) or 0) == col - i then
+		return i
+	end
+	return col - 1
 end
 
 --- Parse a line into WORDs and return their boundaries as byte offsets.

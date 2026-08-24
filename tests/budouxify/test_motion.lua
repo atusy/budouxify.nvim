@@ -541,9 +541,10 @@ end
 
 T["parse_words"]["treats invalid UTF-8 as a WORD instead of hanging"] = function()
 	MiniTest.expect.equality(words.parse_words("\128"), { { head = 0, tail = 0 } })
+	-- each invalid byte is its own char, so the tail is the last byte
 	MiniTest.expect.equality(words.parse_words("a \128\129 b"), {
 		{ head = 0, tail = 0 },
-		{ head = 2, tail = 2 },
+		{ head = 2, tail = 3 },
 		{ head = 5, tail = 5 },
 	})
 end
