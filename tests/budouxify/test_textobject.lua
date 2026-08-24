@@ -120,6 +120,9 @@ register_cases(T, {
 		{ "   [^      ]", "abc  def ghi", 2 },
 		-- stops at the end of the line
 		{ "[^        ]", "abc def ghi", 99 },
+		-- an oversized count already consumed the trailing blanks:
+		-- no leading-blank fallback
+		{ "     [^   ]", "one  two   ", 2 },
 	},
 }, false)
 
