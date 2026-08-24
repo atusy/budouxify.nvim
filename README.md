@@ -71,8 +71,10 @@ text is a [budoux](https://github.com/google/budoux) segment, so `diW` on
   on the line).
 - A count selects that many objects, e.g. `d2aW`.
 
-Differences from Vim: both stay within the current line, and in Visual mode
-they reselect the object under the cursor instead of extending the area.
+Differences from Vim: both stay within the current line (so `aW` on trailing
+blanks selects just the blanks, where Vim would reach the next line), and in
+Visual mode they reselect the object under the cursor instead of extending
+the area.
 
 `require("budouxify.textobject").find({ inner = true })` returns the range as
 `{ start = { row, col }, finish = { row, col } }` (byte offsets, both ends
