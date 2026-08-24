@@ -539,6 +539,20 @@ T["error handling"]["errors when only row is given"] = function()
 	end)
 end
 
+T["error handling"]["find_forward returns nil after reporting a cursor error"] = function()
+	local reported = nil
+	local ok, pos = pcall(M.find_forward, {
+		row = 1,
+		head = true,
+		error_handler = function(err)
+			reported = err
+		end,
+	})
+	MiniTest.expect.equality(ok, true)
+	MiniTest.expect.equality(pos, nil)
+	MiniTest.expect.no_equality(reported, nil)
+end
+
 T["error handling"]["errors when only col is given"] = function()
 	MiniTest.expect.error(function()
 		M.find_forward({ col = 0, head = true, curline = "abc", error_handler = error })

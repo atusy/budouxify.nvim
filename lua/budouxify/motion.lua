@@ -66,6 +66,7 @@ function M.find_forward(opts)
 	local ok, row, col = pcall(M._solve_cursor, opts.row, opts.col)
 	if not ok then
 		handle_error(tostring(row))
+		return nil
 	end
 	local buf = opts.buf or vim.api.nvim_get_current_buf()
 	local curline = opts.curline or vim.api.nvim_buf_get_lines(buf, row - 1, row, false)[1]
