@@ -1,5 +1,15 @@
 local M = {}
 
+--- budoux.luaはモデルの読み込みを毎回やり直すので、パーサを1度だけ作って使い回す
+---@type fun(sentence: string): string[]
+local parse_japanese = nil
+local function get_parser()
+	if not parse_japanese then
+		parse_japanese = require("budoux").load_japanese_model().parse
+	end
+	return parse_japanese
+end
+
 ---@param buf number
 ---@param row number
 ---@param head boolean
@@ -88,8 +98,7 @@ end
 ---@param opts { row: number, col: number, curline: string, head: boolean, buf: number }
 ---@return { row: number, col: number } | nil
 function M._find_forward(opts)
-	---@type fun(string): string[]
-	local parse = require("budoux").load_japanese_model().parse
+	local parse = get_parser()
 
 	local row, col, curline = opts.row, opts.col, opts.curline
 	local rightchars = string.sub(curline, col + 1) -- including the current char
@@ -269,8 +278,7 @@ end
 ---@param line string
 ---@return { head: number, tail: number }[] # head: first char, tail: start of last char
 function M._parse_words(line)
-	---@type fun(string): string[]
-	local parse = require("budoux").load_japanese_model().parse
+	local parse = get_parser()
 
 	local regex_spaces = vim.regex("^[[:space:]　]\\+")
 	local regex_ascii_word = vim.regex("^[[:alnum:][:punct:]]\\+")
