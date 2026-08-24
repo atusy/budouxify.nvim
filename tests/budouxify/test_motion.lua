@@ -576,6 +576,7 @@ T["parse_words"]["treats NUL and control chars as WORD chars"] = function()
 	MiniTest.expect.equality(words.parse_words("a\0b"), { { head = 0, tail = 2 } })
 	MiniTest.expect.equality(words.parse_words("a\rb"), { { head = 0, tail = 2 } })
 	MiniTest.expect.equality(words.parse_words("a\vb\fc"), { { head = 0, tail = 4 } })
+	MiniTest.expect.equality(words.parse_words("a\nb"), { { head = 0, tail = 2 } })
 end
 
 T["parse_words"]["treats invalid UTF-8 as a WORD instead of hanging"] = function()

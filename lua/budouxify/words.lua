@@ -116,7 +116,9 @@ function M.parse_words(line)
 		local rest = string.sub(line, i + 1)
 		local _, blanks = regex_blanks:match_str(rest)
 		-- Luaパターンはバイト単位なのでNULや制御文字も安全に扱える
-		local ascii_word = string.match(rest, "^[%z\1-\8\11-\31\33-\127]+")
+		-- 空白(スペース・タブ)以外の全ASCIIバイトがWORD文字。LF(\10)も含めることで
+		-- どのバイトも必ずいずれかの分岐で前進し、無限ループしない
+		local ascii_word = string.match(rest, "^[%z\1-\8\10-\31\33-\127]+")
 		if blanks then
 			i = i + blanks
 		elseif ascii_word then
