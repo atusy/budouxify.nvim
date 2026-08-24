@@ -77,5 +77,7 @@ line, or fail at the end of the buffer), and in Visual mode they reselect
 the object under the cursor instead of extending the area.
 
 `require("budouxify.textobject").find({ inner = true })` returns the range as
-`{ start = { row, col }, finish = { row, col } }` (byte offsets, both ends
-inclusive), or `nil` on an empty line, if you want to build your own mapping.
+`{ start = { row = ..., col = ... }, finish = { row = ..., col = ... } }`,
+or `nil` on an empty line, if you want to build your own mapping. `row` is a
+1-based line number and `col` a 0-based byte column; the range includes both
+ends, and `finish.col` points to the first byte of the last included char.
