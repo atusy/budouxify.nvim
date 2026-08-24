@@ -75,8 +75,8 @@ Differences from Vim: both stay within the current line (so `aW` on trailing
 blanks selects just the blanks, where Vim would reach a WORD on a following
 line, or fail at the end of the buffer); in Visual mode they reselect the
 object under the cursor instead of extending the area; and a cursor sitting
-past the end of the line (`virtualedit`) acts on the last WORD, where Vim's
-own behavior degenerates.
+past the end of the line (`virtualedit`) acts as if on the last char, where
+Vim's own behavior degenerates.
 
 `require("budouxify.textobject").find({ inner = true })` returns the range as
 `{ start = { row = ..., col = ... }, finish = { row = ..., col = ... } }`,

@@ -293,11 +293,13 @@ T["select"]["diW deletes an invalid UTF-8 WORD entirely"] = function()
 	MiniTest.expect.equality(apply({ "x \224\128\128 y" }, { 1, 3 }, "diW"), { "x  y" })
 end
 
-T["select"]["a virtualedit cursor past EOL acts on the last WORD"] = function()
+T["select"]["a virtualedit cursor past EOL acts as if on the last char"] = function()
 	vim.o.virtualedit = "onemore"
 	local ok, err = pcall(function()
 		MiniTest.expect.equality(apply({ "abc def" }, { 1, 7 }, "diW"), { "abc " })
 		MiniTest.expect.equality(apply({ "abc def" }, { 1, 7 }, "daW"), { "abc" })
+		-- the last char may be a blank: the blank run is the object
+		MiniTest.expect.equality(apply({ "abc   " }, { 1, 6 }, "diW"), { "abc" })
 	end)
 	vim.o.virtualedit = ""
 	if not ok then
