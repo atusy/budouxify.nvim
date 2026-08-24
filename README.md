@@ -64,10 +64,11 @@ text is a [budoux](https://github.com/google/budoux) segment, so `diW` on
 
 - `iW` selects the WORD under the cursor, or the run of blanks when the
   cursor is on a blank.
-- `aW` also selects the trailing blanks (or, when there are none, the blanks
-  separating the WORD from the previous one — line-leading indentation is
-  never included), and on a blank selects the blanks together with the
-  following WORD (or just the blanks when nothing follows on the line).
+- `aW` on a WORD also selects its trailing blanks; when there are none, it
+  selects the blanks separating the WORD from the previous one instead, but
+  not line-leading indentation. Started on a blank, it selects the blanks
+  together with the following WORD (or just the blanks when nothing follows
+  on the line).
 - A count selects that many objects, e.g. `d2aW`.
 
 Differences from Vim: both stay within the current line, and in Visual mode
