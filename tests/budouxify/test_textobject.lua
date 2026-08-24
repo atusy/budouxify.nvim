@@ -132,12 +132,11 @@ T["single-char WORD"]["iW selects just the char"] = function()
 	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 0 } })
 end
 
--- vim.regex cannot see past a NUL byte, so the range is approximate; the
--- guarantee is "no error". Reachable from real buffers: nvim_buf_get_lines
--- returns NUL bytes as-is.
-T["single-char WORD"]["iW on a line with a NUL byte does not error"] = function()
+-- NUL bytes are WORD chars like in Vim, and are reachable from real
+-- buffers: nvim_buf_get_lines returns them as-is.
+T["single-char WORD"]["iW treats a NUL byte as part of the WORD"] = function()
 	local found = M.find({ inner = true, row = 1, col = 1, curline = "a\0b", error_handler = error })
-	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 0 } })
+	MiniTest.expect.equality(found, { start = { row = 1, col = 0 }, finish = { row = 1, col = 2 } })
 
 	-- through an actual buffer, without supplying curline
 	local buf = vim.api.nvim_create_buf(false, true)
@@ -235,6 +234,10 @@ T["select"]["honors selection=exclusive"] = function()
 	if not ok then
 		error(err)
 	end
+end
+
+T["select"]["diW deletes the whole WORD around a NUL byte"] = function()
+	MiniTest.expect.equality(apply({ "x a\0b y" }, { 1, 3 }, "diW"), { "x  y" })
 end
 
 T["select"]["operator on an empty line is a no-op"] = function()

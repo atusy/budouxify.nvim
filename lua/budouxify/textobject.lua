@@ -3,28 +3,6 @@ local M = {}
 local motion = require("budouxify.motion")
 local words = require("budouxify.words")
 
-local regex_first_char = vim.regex("^.")
-local regex_last_char = vim.regex(".$")
-
---- Byte offset of the char following the one at `col`.
----@param line string
----@param col number
----@return number
-function M._next_char(line, col)
-	-- NUL文字などにはvim.regexがマッチしないので、1バイト文字として数える
-	local _, len = regex_first_char:match_str(string.sub(line, col + 1))
-	return col + (len or 1)
-end
-
---- Byte offset of the char preceding the one at `col`.
----@param line string
----@param col number
----@return number
-function M._prev_char(line, col)
-	local x = regex_last_char:match_str(string.sub(line, 1, col))
-	return x or col - 1
-end
-
 --- Range of the blanks between two WORDs, where either may be nil
 --- to mean the start or the end of the line.
 ---@param line string
@@ -32,13 +10,8 @@ end
 ---@param after { head: number, tail: number } | nil
 ---@return number, number # start and finish (start of last char); start > finish if none
 function M._blanks_between(line, before, after)
-	local start = before and M._next_char(line, before.tail) or 0
-	local finish
-	if after then
-		finish = after.head == 0 and -1 or M._prev_char(line, after.head)
-	else
-		finish = M._prev_char(line, #line)
-	end
+	local start = before and words.next_char(line, before.tail) or 0
+	local finish = words.prev_char(line, after and after.head or #line)
 	return start, finish
 end
 
@@ -71,7 +44,7 @@ function M._find(opts)
 		return nil
 	end
 	-- 行末より右の仮想カーソル(v$やvirtualedit)は最後の文字として扱う
-	local col = math.min(opts.col, M._prev_char(line, #line))
+	local col = math.min(opts.col, words.prev_char(line, #line))
 	local count = opts.count or 1
 
 	local objects = M._objects(line)
@@ -151,7 +124,7 @@ function M.select(opts)
 	-- 'selection'がexclusiveだとカーソル位置の文字が選択に含まれないので、1文字先に置く
 	if vim.o.selection == "exclusive" then
 		local line = vim.api.nvim_buf_get_lines(0, range.finish.row - 1, range.finish.row, true)[1]
-		finish = M._next_char(line, finish)
+		finish = words.next_char(line, finish)
 	end
 	vim.api.nvim_win_set_cursor(0, { range.finish.row, finish })
 end
