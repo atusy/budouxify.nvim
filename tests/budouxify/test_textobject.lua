@@ -180,6 +180,21 @@ T["error handling"]["errors when only row is given"] = function()
 	end)
 end
 
+T["error handling"]["normalizes an invalid count to 1"] = function()
+	local expect = M.find({ inner = true, row = 1, col = 0, curline = "abc def", error_handler = error })
+	for _, count in ipairs({ 0, -1, 0.5 }) do
+		local found = M.find({
+			inner = true,
+			count = count,
+			row = 1,
+			col = 0,
+			curline = "abc def",
+			error_handler = error,
+		})
+		MiniTest.expect.equality(found, expect)
+	end
+end
+
 T["error handling"]["returns nil when row is outside the buffer"] = function()
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "abc" })
