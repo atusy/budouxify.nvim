@@ -269,6 +269,9 @@ T["select"]["diW deletes an invalid UTF-8 WORD entirely"] = function()
 	MiniTest.expect.equality(apply({ "x \128\129 y" }, { 1, 2 }, "diW"), { "x  y" })
 	-- overlong encoding: each byte is its own char, cursor on the second
 	MiniTest.expect.equality(apply({ "x \192\128 y" }, { 1, 3 }, "diW"), { "x  y" })
+	-- structurally complete but illegal sequence: one char, like Neovim's
+	-- own cursor stepping treats it
+	MiniTest.expect.equality(apply({ "x \224\128\128 y" }, { 1, 3 }, "diW"), { "x  y" })
 end
 
 T["select"]["operator on an empty line is a no-op"] = function()

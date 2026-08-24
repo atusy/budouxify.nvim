@@ -45,8 +45,10 @@ local function utf8_length(byte)
 end
 
 --- Byte offset of the char following the one at `col`.
---- Byte-based so that NUL is stepped over safely; each byte of invalid
---- UTF-8 counts as its own char.
+--- Byte-based so that NUL is stepped over safely. Like Neovim's own char
+--- stepping (utf_ptr2len), validation is structural: a lead byte with its
+--- continuation bytes counts as one char even if the codepoint is illegal
+--- (overlong, surrogate); structurally broken bytes count one byte each.
 ---@param line string
 ---@param col number
 ---@return number
@@ -63,8 +65,8 @@ end
 
 --- Byte offset of the last char of `string.sub(line, 1, col)`,
 --- i.e. of the char preceding the one at `col`. -1 if there is none.
---- Byte-based so that NUL is stepped over safely; each byte of invalid
---- UTF-8 counts as its own char.
+--- Byte-based so that NUL is stepped over safely; validation is
+--- structural, like next_char.
 ---@param line string
 ---@param col number
 ---@return number
