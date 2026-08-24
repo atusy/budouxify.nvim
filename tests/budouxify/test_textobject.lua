@@ -293,6 +293,18 @@ T["select"]["diW deletes an invalid UTF-8 WORD entirely"] = function()
 	MiniTest.expect.equality(apply({ "x \224\128\128 y" }, { 1, 3 }, "diW"), { "x  y" })
 end
 
+T["select"]["a virtualedit cursor past EOL acts on the last WORD"] = function()
+	vim.o.virtualedit = "onemore"
+	local ok, err = pcall(function()
+		MiniTest.expect.equality(apply({ "abc def" }, { 1, 7 }, "diW"), { "abc " })
+		MiniTest.expect.equality(apply({ "abc def" }, { 1, 7 }, "daW"), { "abc" })
+	end)
+	vim.o.virtualedit = ""
+	if not ok then
+		error(err)
+	end
+end
+
 T["select"]["operator on an empty line is a no-op"] = function()
 	MiniTest.expect.equality(apply({ "", "abc" }, { 1, 0 }, "diW"), { "", "abc" })
 end
