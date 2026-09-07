@@ -1,9 +1,9 @@
 local M = {}
 
----@param buf number
----@param row number
+---@param buf integer
+---@param row integer
 ---@param head boolean
----@return { row: number, col: number } | nil
+---@return { row: integer, col: integer } | nil
 function M._find_forward_in_next_line(buf, row, head)
 	local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1]
 
@@ -42,9 +42,9 @@ function M._find_forward_in_next_line(buf, row, head)
 	})
 end
 
----@param row number?
----@param col number?
----@return number, number
+---@param row integer?
+---@param col integer?
+---@return integer, integer
 function M._solve_cursor(row, col)
 	if row and col then
 		return row, col
@@ -56,8 +56,8 @@ function M._solve_cursor(row, col)
 	error("row and col must be both set or both nil")
 end
 
----@param opts { head: boolean, row: number?, col: number?, curline: string?, buf: number?, error_handler?: function }
----@return { row: number, col: number } | nil
+---@param opts { head: boolean, row: integer?, col: integer?, curline: string?, buf: integer?, error_handler?: function }
+---@return { row: integer, col: integer } | nil
 function M.find_forward(opts)
 	local handle_error = opts.error_handler or function(err)
 		vim.notify(tostring(err), vim.log.levels.ERROR)
@@ -84,8 +84,8 @@ function M.find_forward(opts)
 	return pos
 end
 
----@param opts { row: number, col: number, curline: string, head: boolean, buf: number }
----@return { row: number, col: number } | nil
+---@param opts { row: integer, col: integer, curline: string, head: boolean, buf: integer }
+---@return { row: integer, col: integer } | nil
 function M._find_forward(opts)
 	---@type fun(string): string[]
 	local parse = require("budoux").load_japanese_model().parse
@@ -266,7 +266,7 @@ end
 --- A WORD is a run of ASCII alphanumerics/punctuations or a budoux
 --- segment of a run of other non-space characters.
 ---@param line string
----@return { head: number, tail: number }[] # head: first char, tail: start of last char
+---@return { head: integer, tail: integer }[] # head: first char, tail: start of last char
 function M._parse_words(line)
 	---@type fun(string): string[]
 	local parse = require("budoux").load_japanese_model().parse
@@ -303,10 +303,10 @@ function M._parse_words(line)
 	return words
 end
 
----@param buf number
----@param row number
+---@param buf integer
+---@param row integer
 ---@param head boolean
----@return { row: number, col: number } | nil
+---@return { row: integer, col: integer } | nil
 function M._find_backward_in_prev_line(buf, row, head)
 	-- 最初の行に達したら移動しない
 	if row <= 1 then
@@ -324,8 +324,8 @@ function M._find_backward_in_prev_line(buf, row, head)
 	return { row = row - 1, col = head and word.head or word.tail }
 end
 
----@param opts { row: number, col: number, curline: string, head: boolean, buf: number }
----@return { row: number, col: number } | nil
+---@param opts { row: integer, col: integer, curline: string, head: boolean, buf: integer }
+---@return { row: integer, col: integer } | nil
 function M._find_backward(opts)
 	local key = opts.head and "head" or "tail"
 	local target = nil
@@ -340,8 +340,8 @@ function M._find_backward(opts)
 	return M._find_backward_in_prev_line(opts.buf, opts.row, opts.head)
 end
 
----@param opts { head: boolean, row: number?, col: number?, curline: string?, buf: number?, error_handler?: function }
----@return { row: number, col: number } | nil
+---@param opts { head: boolean, row: integer?, col: integer?, curline: string?, buf: integer?, error_handler?: function }
+---@return { row: integer, col: integer } | nil
 function M.find_backward(opts)
 	local handle_error = opts.error_handler or function(err)
 		vim.notify(tostring(err), vim.log.levels.ERROR)
